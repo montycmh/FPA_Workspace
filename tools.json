@@ -7,7 +7,11 @@
     "legacyPath": "./legacy/index.html?tool=aghr",
     "status": "migrating",
     "summary": "Review global headcount activity, movement, and workforce trends.",
-    "tags": ["Headcount", "Movement", "Reporting"]
+    "tags": [
+      "Headcount",
+      "Movement",
+      "Reporting"
+    ]
   },
   {
     "id": "araging",
@@ -17,7 +21,11 @@
     "legacyPath": "./legacy/index.html?tool=araging",
     "status": "migrating",
     "summary": "Track customer balances, aging buckets, and month-over-month changes.",
-    "tags": ["Receivables", "Collections", "Variance"]
+    "tags": [
+      "Receivables",
+      "Collections",
+      "Variance"
+    ]
   },
   {
     "id": "pizarra",
@@ -27,17 +35,25 @@
     "legacyPath": "./legacy/index.html?tool=pizarra",
     "status": "migrating",
     "summary": "Open budget versus actual review flows by business unit.",
-    "tags": ["Budget vs Actual", "Departments", "Monthly Review"]
+    "tags": [
+      "Budget vs Actual",
+      "Departments",
+      "Monthly Review"
+    ]
   },
   {
     "id": "hcactuals",
     "name": "Total HC Actuals by Function",
     "icon": "ti-table",
     "path": "./hc-actuals-by-function/",
-    "legacyPath": "./legacy/index.html?tool=hcactuals",
-    "status": "migrating",
-    "summary": "View functional headcount actuals, transfers, hires, and attrition.",
-    "tags": ["Headcount", "Functions", "Actuals"]
+    "legacyPath": null,
+    "status": "live",
+    "summary": "Generate the headcount-by-function view, including hires, attrition, transfers, subtotals, and Costa Rica edits.",
+    "tags": [
+      "Headcount",
+      "Functions",
+      "Monthly Report"
+    ]
   },
   {
     "id": "opex",
@@ -47,7 +63,11 @@
     "legacyPath": null,
     "status": "live",
     "summary": "Review OPEX activity, reclasses, missing accruals, and recommendations.",
-    "tags": ["OPEX", "Reclasses", "Accruals"]
+    "tags": [
+      "OPEX",
+      "Reclasses",
+      "Accruals"
+    ]
   },
   {
     "id": "sbc",
@@ -56,6 +76,10 @@
     "path": "./sbc-cost-center-feed/",
     "status": "live",
     "summary": "Generate mapped SBC cost-center feeds, validate totals, and export quarter or consolidated CSVs.",
-    "tags": ["SBC", "Forecast", "CSV Export"]
+    "tags": [
+      "SBC",
+      "Forecast",
+      "CSV Export"
+    ]
   }
 ]
