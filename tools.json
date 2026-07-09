@@ -74,13 +74,12 @@
     "name": "SBC Cost Center Feed",
     "icon": "ti-coin",
     "path": "./sbc-cost-center-feed/",
-    "legacyPath": "./legacy/index.html?tool=sbc",
-    "status": "migrating",
-    "summary": "Prepare mapped SBC cost center feeds and export quarter-ready outputs.",
+    "status": "live",
+    "summary": "Generate mapped SBC cost-center feeds, validate totals, and export quarter or consolidated CSVs.",
     "tags": [
       "SBC",
-      "Cost Centers",
-      "Quarterly Feed"
+      "Forecast",
+      "CSV Export"
     ]
   }
 ]
