@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Total HC Actuals by Function</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <link rel="stylesheet" href="../assets/shared.css" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="workspace-shell tool-shell">
+    <header class="tool-hero">
+      <div class="tool-hero-main">
+        <a class="back-link" href="../index.html"><i class="ti ti-arrow-left"></i><span>Back to Workspace</span></a>
+        <div class="hero-kicker">Headcount Workspace</div>
+        <h1>Total HC Actuals by Function</h1>
+        <p>Upload a monthly HC Actuals workbook to generate the functional headcount report with prior months, hires, attrition, transfers, and editable Costa Rica adjustments.</p>
+      </div>
+      <div class="tool-hero-side">
+        <div class="hero-stat">
+          <strong>4</strong>
+          <span>Months in view</span>
+        </div>
+        <div class="hero-stat">
+          <strong>HTML</strong>
+          <span>Standalone report output</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="tool-summary-grid">
+      <article class="summary-card">
+        <div class="section-label">What this workspace does</div>
+        <ul class="workspace-bullets">
+          <li>Reads the monthly HC Actuals workbook directly in the browser.</li>
+          <li>Maps classes to business units using the workbook’s Mapping tab.</li>
+          <li>Builds the function-level table with hires, attrition, transfers, subtotals, and total net headcount.</li>
+          <li>Creates a self-contained report you can share or paste into slides.</li>
+        </ul>
+      </article>
+      <article class="summary-card">
+        <div class="section-label">Supported file patterns</div>
+        <ul class="workspace-bullets">
+          <li><code>HC_Actuals_by_function_MmmYY.xlsx</code></li>
+          <li><code>HC_Actuals_by function_MmmYY.xlsx</code></li>
+          <li>Requires two tabs: <strong>sheet1</strong> and <strong>Mapping</strong></li>
+          <li>Costa Rica stays editable in the generated report.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="tool-board hca-board">
+      <div class="files-header-row">
+        <div>
+          <div class="section-label">Upload workbook</div>
+          <p class="subtle-copy">Use the monthly HC Actuals file and generate the report directly from your browser.</p>
+        </div>
+      </div>
+      <div class="hca-upload-shell">
+        <label class="upload-drop hca-drop" id="hca-drop-0" ondragover="hcaDragOver(event,'hca-drop-0')" ondragleave="hcaDragLeave('hca-drop-0')" ondrop="hcaDrop(event,0)">
+          <i class="ti ti-file-upload" id="hca-icon-0"></i>
+          <span id="hca-label-0">HC_Actuals_by_function_MmmYY.xlsx — click or drag</span>
+          <small id="hca-hint-0">Also supports the older pattern with a space: HC_Actuals_by function_MmmYY.xlsx</small>
+          <input type="file" accept=".xlsx,.xls" id="hca-file-0" style="display:none" onchange="hcaFileSelected(0,this)" />
+        </label>
+        <button id="hca-generate-btn" class="primary-generate" onclick="hcaGenerateReport()" disabled>
+          <i class="ti ti-report-analytics"></i>
+          Generate Report
+        </button>
+      </div>
+    </section>
+  </main>
+  <script src="./app.js"></script>
+</body>
+</html>

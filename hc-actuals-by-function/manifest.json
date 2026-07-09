@@ -1,0 +1,17 @@
+{
+  "owner": "Monty",
+  "host": "GitHub Pages",
+  "mode": "browser-only",
+  "status": "live",
+  "id": "hcactuals",
+  "name": "Total HC Actuals by Function",
+  "path": "./hc-actuals-by-function/",
+  "desc": "Standalone browser tool for generating the functional HC Actuals report from the monthly workbook.",
+  "files": [
+    "HC_Actuals_by_function_MmmYY.xlsx",
+    "HC_Actuals_by function_MmmYY.xlsx"
+  ],
+  "outputs": [
+    "Self-contained HTML report"
+  ]
+}
