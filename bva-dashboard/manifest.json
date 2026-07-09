@@ -1,0 +1,25 @@
+{
+  "owner": "Monty",
+  "host": "GitHub Pages",
+  "mode": "browser-only",
+  "status": "migration-ready",
+  "id": "pizarra",
+  "name": "BvA Dashboard",
+  "section": "Glean",
+  "platform": "glean",
+  "tag": "Glean \u00b7 FP&A",
+  "tagIcon": "ti-layout-dashboard",
+  "path": "./bva-dashboard/",
+  "legacyToolId": "pizarra",
+  "desc": "Budget vs Actual dashboard launcher. This folder can evolve into a browser-first version or stay as a Glean entrypoint page.",
+  "files": [
+    "4 Excel files per run"
+  ],
+  "outputs": [
+    "One final HTML BvA Dashboard"
+  ],
+  "notes": [
+    "Current implementation is a launcher into Glean chats by business unit.",
+    "Good candidate for a future browser-native rewrite separate from the home page."
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "owner": "Monty",
+  "host": "GitHub Pages",
+  "mode": "browser-only",
+  "status": "migration-priority",
+  "id": "hcactuals",
+  "name": "Total HC Actuals by Function",
+  "section": "Claude Projects",
+  "platform": "claude",
+  "tag": "Report Generator \u00b7 Headcount",
+  "tagIcon": "ti-table",
+  "path": "./hc-actuals-by-function/",
+  "legacyToolId": "hcactuals",
+  "desc": "Headcount by function generator. This should be migrated first after OPEX because its workbook parser and table logic are complex.",
+  "files": [
+    "HC_Actuals_by_function_MmmYY.xlsx",
+    "HC_Actuals_by function_MmmYY.xlsx"
+  ],
+  "outputs": [
+    "Self-contained HTML report"
+  ],
+  "notes": [
+    "Current implementation remains available in legacy mode while you stabilize the parser.",
+    "This folder is the right place to split parser, mapping logic, and report renderer into separate files."
+  ]
+}

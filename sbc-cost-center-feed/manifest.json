@@ -1,0 +1,26 @@
+{
+  "owner": "Monty",
+  "host": "GitHub Pages",
+  "mode": "browser-only",
+  "status": "migration-ready",
+  "id": "sbc",
+  "name": "SBC Cost Center Feed",
+  "section": "Claude Projects",
+  "platform": "claude",
+  "tag": "Report Generator \u00b7 Finance",
+  "tagIcon": "ti-coin",
+  "path": "./sbc-cost-center-feed/",
+  "legacyToolId": "sbc",
+  "desc": "Quarterly SBC feed generator. This folder is the long-term home for the mapping UI and CSV export logic.",
+  "files": [
+    "Up to 8 SBC_QX_YYYY_Forecast.xlsx files"
+  ],
+  "outputs": [
+    "CSV feed per quarter",
+    "Consolidated CSV feed"
+  ],
+  "notes": [
+    "Current working implementation remains available in legacy mode.",
+    "Best next step is extracting mapping state, parser, and CSV builders into this folder."
+  ]
+}

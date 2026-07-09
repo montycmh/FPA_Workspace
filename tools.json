@@ -1,0 +1,86 @@
+[
+  {
+    "id": "aghr",
+    "name": "Active Global Headcount Report",
+    "icon": "ti-users",
+    "path": "./aghr/",
+    "legacyPath": "./legacy/index.html?tool=aghr",
+    "status": "migrating",
+    "summary": "Review global headcount activity, movement, and workforce trends.",
+    "tags": [
+      "Headcount",
+      "Movement",
+      "Reporting"
+    ]
+  },
+  {
+    "id": "araging",
+    "name": "A/R Aging Report",
+    "icon": "ti-clock-dollar",
+    "path": "./ar-aging-report/",
+    "legacyPath": "./legacy/index.html?tool=araging",
+    "status": "migrating",
+    "summary": "Track customer balances, aging buckets, and month-over-month changes.",
+    "tags": [
+      "Receivables",
+      "Collections",
+      "Variance"
+    ]
+  },
+  {
+    "id": "pizarra",
+    "name": "BvA Dashboard",
+    "icon": "ti-layout-dashboard",
+    "path": "./bva-dashboard/",
+    "legacyPath": "./legacy/index.html?tool=pizarra",
+    "status": "migrating",
+    "summary": "Open budget versus actual review flows by business unit.",
+    "tags": [
+      "Budget vs Actual",
+      "Departments",
+      "Monthly Review"
+    ]
+  },
+  {
+    "id": "hcactuals",
+    "name": "Total HC Actuals by Function",
+    "icon": "ti-table",
+    "path": "./hc-actuals-by-function/",
+    "legacyPath": "./legacy/index.html?tool=hcactuals",
+    "status": "migrating",
+    "summary": "View functional headcount actuals, transfers, hires, and attrition.",
+    "tags": [
+      "Headcount",
+      "Functions",
+      "Actuals"
+    ]
+  },
+  {
+    "id": "opex",
+    "name": "OPEX Review Board",
+    "icon": "ti-cash",
+    "path": "./opex-review-board/",
+    "legacyPath": null,
+    "status": "live",
+    "summary": "Review OPEX activity, reclasses, missing accruals, and recommendations.",
+    "tags": [
+      "OPEX",
+      "Reclasses",
+      "Accruals"
+    ]
+  },
+  {
+    "id": "sbc",
+    "name": "SBC Cost Center Feed",
+    "icon": "ti-coin",
+    "path": "./sbc-cost-center-feed/",
+    "legacyPath": "./legacy/index.html?tool=sbc",
+    "status": "migrating",
+    "summary": "Prepare mapped SBC cost center feeds and export quarter-ready outputs.",
+    "tags": [
+      "SBC",
+      "Cost Centers",
+      "Quarterly Feed"
+    ]
+  }
+]

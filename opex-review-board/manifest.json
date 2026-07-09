@@ -1,0 +1,27 @@
+{
+  "owner": "Monty",
+  "host": "GitHub Pages",
+  "mode": "browser-only",
+  "status": "standalone",
+  "id": "opex",
+  "name": "OPEX Review Board",
+  "section": "Custom",
+  "platform": "custom",
+  "tag": "Custom \u00b7 Month-End Close",
+  "tagIcon": "ti-table",
+  "path": "./opex-review-board/",
+  "legacyToolId": null,
+  "desc": "Standalone browser-based OPEX review board. This folder is already the right target architecture for a dedicated app.",
+  "files": [
+    "OPEX Input workbook",
+    "GL Transaction Summary workbook"
+  ],
+  "outputs": [
+    "Interactive OPEX Review Board",
+    "Reclass export"
+  ],
+  "notes": [
+    "This tool already wants to live as its own standalone app.",
+    "Drop the current working OPEX app code directly into this folder and keep the launchpad as navigation only."
+  ]
+}
