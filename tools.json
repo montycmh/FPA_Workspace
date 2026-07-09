@@ -14,10 +14,10 @@
     "name": "A/R Aging Report",
     "icon": "ti-clock-dollar",
     "path": "./ar-aging-report/",
-    "legacyPath": "./legacy/index.html?tool=araging",
-    "status": "migrating",
-    "summary": "Track customer balances, aging buckets, and month-over-month changes.",
-    "tags": ["Receivables", "Collections", "Variance"]
+    "legacyPath": null,
+    "status": "live",
+    "summary": "Generate the A/R aging workspace with cleaned buckets, top-customer variance review, and export-ready report output.",
+    "tags": ["Receivables", "Aging", "HTML Report"]
   },
   {
     "id": "pizarra",
