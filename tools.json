@@ -4,10 +4,10 @@
     "name": "Active Global Headcount Report",
     "icon": "ti-users",
     "path": "./aghr/",
-    "legacyPath": "./legacy/index.html?tool=aghr",
-    "status": "migrating",
-    "summary": "Review global headcount activity, movement, and workforce trends.",
-    "tags": ["Headcount", "Movement", "Reporting"]
+    "legacyPath": null,
+    "status": "live",
+    "summary": "Generate the global headcount workspace with KPIs, movement views, detailed tabs, and Pigment export.",
+    "tags": ["Headcount", "Workday", "HTML Report"]
   },
   {
     "id": "araging",
