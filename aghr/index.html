@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Active Global Headcount Report</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <link rel="stylesheet" href="../assets/shared.css" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="workspace-shell tool-shell aghr-shell">
+    <header class="aghr-hero">
+      <div class="aghr-hero-main">
+        <a class="back-pill" href="../index.html"><i class="ti ti-arrow-left"></i><span>Back to Workspace</span></a>
+        <div class="hero-badge"><i class="ti ti-users"></i>Headcount Workspace</div>
+        <h1>Active Global Headcount Report</h1>
+        <p>Upload the monthly AGHR workbook to generate the interactive headcount report with KPI summaries, movement views, detailed tabs, and Pigment export.</p>
+        <div class="hero-chip-row">
+          <span class="hero-chip"><i class="ti ti-file-spreadsheet"></i>One workbook upload</span>
+          <span class="hero-chip"><i class="ti ti-layout-dashboard"></i>Interactive HTML output</span>
+          <span class="hero-chip"><i class="ti ti-refresh"></i>Monthly workflow</span>
+        </div>
+      </div>
+      <div class="aghr-hero-side">
+        <div class="hero-side-card accent">
+          <strong>5</strong>
+          <span>Interactive tabs in the generated report</span>
+        </div>
+        <div class="hero-side-card">
+          <strong>AGHR</strong>
+          <span>Workday extract pattern required</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="aghr-grid">
+      <article class="aghr-card upload-card">
+        <div class="card-head">
+          <div>
+            <div class="section-label">Upload workbook</div>
+            <h2>Generate this month’s headcount report</h2>
+            <p class="card-copy">Drop one AGHR workbook and the output will open as a standalone HTML report in a new tab.</p>
+          </div>
+          <div class="last-updated-card">Last updated <span id="last-updated">—</span></div>
+        </div>
+
+        <label class="upload-drop" id="aghr-drop-0" ondragover="aghrDragOver(event,'aghr-drop-0')" ondragleave="aghrDragLeave('aghr-drop-0')" ondrop="aghrDrop(event,0)">
+          <div class="upload-icon-wrap"><i class="ti ti-file-upload" id="aghr-icon-0"></i></div>
+          <span id="aghr-label-0">AGHRMmmYY.xlsx — click or drag</span>
+          <small>Example: AGHRJul26.xlsx</small>
+          <input type="file" accept=".xlsx,.xls" style="display:none;" id="aghr-file-0" onchange="aghrFileSelected(0,this)">
+        </label>
+
+        <div class="cta-row">
+          <button id="aghr-generate-btn" class="primary-action" onclick="aghrGenerateReport()" disabled>
+            <i class="ti ti-report-analytics"></i>Generate Report
+          </button>
+          <p class="helper-note">The report month is read from the filename. The effective month is the month before the filename month.</p>
+        </div>
+      </article>
+
+      <article class="aghr-card info-card">
+        <div class="section-label">What this workspace includes</div>
+        <div class="info-stack">
+          <div class="info-item">
+            <div class="info-icon"><i class="ti ti-chart-bar"></i></div>
+            <div>
+              <strong>KPI summary</strong>
+              <span>Total active, FTE, contingent, full-time, and part-time views.</span>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon"><i class="ti ti-arrows-exchange"></i></div>
+            <div>
+              <strong>Movement views</strong>
+              <span>FTE, contingent, and Costa Rica movement tables with historical context.</span>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon"><i class="ti ti-table"></i></div>
+            <div>
+              <strong>Detailed tabs</strong>
+              <span>Searchable raw data, FTE, contingent, and Pigment-ready output.</span>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "owner": "Monty",
+  "host": "GitHub Pages",
+  "mode": "browser-only",
+  "status": "live",
+  "id": "aghr",
+  "name": "Active Global Headcount Report",
+  "section": "Headcount Workspace",
+  "platform": "custom",
+  "path": "./aghr/",
+  "desc": "Standalone AGHR report generator using the monthly Workday extract.",
+  "files": [
+    "AGHRMmmYY.xlsx \u2014 Workday extract"
+  ],
+  "outputs": [
+    "Interactive HTML report"
+  ],
+  "notes": [
+    "Report month is derived from the filename.",
+    "The effective month is the prior month of the filename month.",
+    "Pigment export is built into the generated report."
+  ]
+}
