@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A/R Aging Report</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <link rel="stylesheet" href="../assets/shared.css" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="workspace-shell tool-shell ar-shell">
+    <header class="ar-hero">
+      <div class="ar-hero-main">
+        <a class="back-pill" href="../index.html"><i class="ti ti-arrow-left"></i><span>Back to Workspace</span></a>
+        <div class="hero-badge"><i class="ti ti-clock-dollar"></i>Receivables Workspace</div>
+        <h1>A/R Aging Report</h1>
+        <p>Upload the current and prior NetSuite aging exports to generate the interactive A/R dashboard with bucket cleanup, top-customer variance review, and export-friendly visuals.</p>
+        <div class="hero-chip-row">
+          <span class="hero-chip"><i class="ti ti-file-spreadsheet"></i>Two workbook uploads</span>
+          <span class="hero-chip"><i class="ti ti-layout-dashboard"></i>Interactive HTML output</span>
+          <span class="hero-chip"><i class="ti ti-refresh"></i>Monthly close workflow</span>
+        </div>
+      </div>
+      <div class="ar-hero-side">
+        <div class="hero-side-card accent">
+          <strong>15</strong>
+          <span>Top customers highlighted in the generated report</span>
+        </div>
+        <div class="hero-side-card">
+          <strong>2 files</strong>
+          <span>Current and prior month-end exports required</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="ar-grid">
+      <article class="ar-card upload-card">
+        <div class="card-head">
+          <div>
+            <div class="section-label">Upload files</div>
+            <h2>Generate this month’s aging report</h2>
+            <p class="card-copy">Drop the current and prior month-end NetSuite exports. The output opens as a standalone report in a new tab.</p>
+          </div>
+        </div>
+
+        <div class="upload-grid">
+          <label class="dropzone" id="ar-drop-0" ondragover="arDragOver(event,'ar-drop-0')" ondragleave="arDragLeave('ar-drop-0')" ondrop="arDrop(event,0)">
+            <i class="ti ti-file-upload" id="ar-icon-0"></i>
+            <span class="drop-title" id="ar-label-0">Current month export</span>
+            <span class="drop-hint">Pattern: JAZAR-ACO-MMDDYYYY.xlsx</span>
+            <input type="file" accept=".xlsx,.xls" id="ar-file-0" onchange="arFileSelected(0,this)" hidden>
+          </label>
+          <label class="dropzone" id="ar-drop-1" ondragover="arDragOver(event,'ar-drop-1')" ondragleave="arDragLeave('ar-drop-1')" ondrop="arDrop(event,1)">
+            <i class="ti ti-file-upload" id="ar-icon-1"></i>
+            <span class="drop-title" id="ar-label-1">Prior month export</span>
+            <span class="drop-hint">Pattern: JAZAR-ACO-MMDDYYYY.xlsx</span>
+            <input type="file" accept=".xlsx,.xls" id="ar-file-1" onchange="arFileSelected(1,this)" hidden>
+          </label>
+        </div>
+
+        <button id="ar-generate-btn" class="primary-action" onclick="arGenerateReport()" disabled>
+          <i class="ti ti-report-analytics"></i>
+          <span>Generate Report</span>
+        </button>
+      </article>
+
+      <aside class="ar-side-stack">
+        <article class="ar-card side-card">
+          <div class="section-label">Files required</div>
+          <div class="mini-chips">
+            <span class="mini-chip"><i class="ti ti-file-spreadsheet"></i>Current month-end export</span>
+            <span class="mini-chip"><i class="ti ti-file-spreadsheet"></i>Prior month-end export</span>
+          </div>
+          <p class="side-copy">The tool compares both months, re-buckets credits, surfaces the top 15 customers, and highlights negative bucket inconsistencies.</p>
+        </article>
+
+        <article class="ar-card side-card">
+          <div class="section-label">Output</div>
+          <ul class="side-list">
+            <li>Interactive A/R aging HTML report</li>
+            <li>Top customer variance section</li>
+            <li>Editable cells for sharing and review</li>
+            <li>Copy-as-image and PNG export inside the report</li>
+          </ul>
+        </article>
+      </aside>
+    </section>
+  </main>
+  <script src="./app.js"></script>
+</body>
+</html>

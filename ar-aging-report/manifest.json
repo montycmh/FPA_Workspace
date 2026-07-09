@@ -1,0 +1,24 @@
+{
+  "owner": "Monty",
+  "host": "GitHub Pages",
+  "mode": "browser-only",
+  "status": "live",
+  "id": "araging",
+  "name": "A/R Aging Report",
+  "section": "Receivables Workspace",
+  "platform": "custom",
+  "path": "./ar-aging-report/",
+  "desc": "Standalone A/R aging generator using current and prior NetSuite aging exports.",
+  "files": [
+    "Current month-end export",
+    "Prior month-end export"
+  ],
+  "outputs": [
+    "Interactive HTML report"
+  ],
+  "notes": [
+    "Current and prior files are identified from the filename date.",
+    "Negative aging buckets are offset against older balances before reporting.",
+    "The generated report supports edit, lock, copy, and PNG download."
+  ]
+}
