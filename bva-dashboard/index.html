@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BvA Dashboard Generator</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+</head>
+<body>
+  <aside>
+    <div>
+      <div class="logo-area"><i class="ti ti-layout-dashboard"></i><span>Budget vs Actual Board</span></div>
+      <nav>
+        <ul>
+          <li class="active" data-nav="sec-overview"><i class="ti ti-layout-dashboard"></i> Overview</li>
+          <li data-nav="sec-qplan"><i class="ti ti-trending-down"></i> Quarter vs Plan</li>
+          <li data-nav="sec-qfcst"><i class="ti ti-trending-down"></i> Quarter vs FCST</li>
+          <li data-nav="sec-fyplan"><i class="ti ti-calendar-stats"></i> Full Year Plan</li>
+          <li data-nav="sec-fyfcst"><i class="ti ti-calendar-stats"></i> Full Year FCST</li>
+          <li data-nav="sec-te"><i class="ti ti-plane"></i> T&amp;E</li>
+          <li data-nav="sec-hc"><i class="ti ti-users"></i> Headcount</li>
+          <li data-nav="sec-actions"><i class="ti ti-checklist"></i> Actions</li>
+          <li id="save-nav"><i class="ti ti-device-floppy"></i> Save</li>
+          <li id="download-nav"><i class="ti ti-download"></i> Download</li>
+          <li id="pdf-nav"><i class="ti ti-file-type-pdf"></i> PDF</li>
+        </ul>
+      </nav>
+    </div>
+    <div class="sidebar-footer" id="sidebar-footer">Upload the 4 feeds to generate a board.</div>
+  </aside>
+
+  <div class="main-workspace">
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div>
+          <div class="topbar-title">FP&A BvA Dashboard Generator</div>
+          <div class="topbar-sub">Upload Quarter, Year, HC, and T&amp;E feeds to build a reusable BvA board.</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn secondary" id="reset-btn"><i class="ti ti-refresh"></i> Reset</button>
+          <button class="btn primary" id="build-btn" disabled><i class="ti ti-wand"></i> Generate Board</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="sec intro" id="upload-shell">
+      <div class="sec-hdr">
+        <span>Required feeds</span>
+        <span class="sec-tag">4 files per run</span>
+      </div>
+      <div class="upload-grid">
+        <label class="upload-card" for="quarter-file">
+          <div class="upload-icon"><i class="ti ti-file-spreadsheet"></i></div>
+          <div class="upload-title">QUARTER</div>
+          <div class="upload-sub">Quarterly OPEX feed</div>
+          <div class="upload-name" id="quarter-name">Choose file</div>
+          <input type="file" id="quarter-file" accept=".xlsx,.xls" hidden />
+        </label>
+        <label class="upload-card" for="year-file">
+          <div class="upload-icon"><i class="ti ti-file-spreadsheet"></i></div>
+          <div class="upload-title">YEAR</div>
+          <div class="upload-sub">Full-year OPEX feed</div>
+          <div class="upload-name" id="year-name">Choose file</div>
+          <input type="file" id="year-file" accept=".xlsx,.xls" hidden />
+        </label>
+        <label class="upload-card" for="hc-file">
+          <div class="upload-icon"><i class="ti ti-file-spreadsheet"></i></div>
+          <div class="upload-title">HC</div>
+          <div class="upload-sub">Headcount feed</div>
+          <div class="upload-name" id="hc-name">Choose file</div>
+          <input type="file" id="hc-file" accept=".xlsx,.xls" hidden />
+        </label>
+        <label class="upload-card" for="te-file">
+          <div class="upload-icon"><i class="ti ti-file-spreadsheet"></i></div>
+          <div class="upload-title">T&amp;E</div>
+          <div class="upload-sub">Travel &amp; expense feed</div>
+          <div class="upload-name" id="te-name">Choose file</div>
+          <input type="file" id="te-file" accept=".xlsx,.xls" hidden />
+        </label>
+      </div>
+      <div class="note-strip">
+        <div><strong>Generic rules:</strong> labels derive from the current files, not hardcoded BU logic.</div>
+        <div><strong>Business model:</strong> negative expense variance is favorable, positive is unfavorable.</div>
+      </div>
+      <div id="build-errors" class="build-errors"></div>
+    </section>
+
+    <div id="dashboard-root"></div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
