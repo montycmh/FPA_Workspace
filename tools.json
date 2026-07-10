@@ -24,10 +24,10 @@
     "name": "BvA Dashboard",
     "icon": "ti-layout-dashboard",
     "path": "./bva-dashboard/",
-    "legacyPath": "./legacy/index.html?tool=pizarra",
-    "status": "migrating",
-    "summary": "Open budget versus actual review flows by business unit.",
-    "tags": ["Budget vs Actual", "Departments", "Monthly Review"]
+    "legacyPath": null,
+    "status": "live",
+    "summary": "Generate a generic BvA dashboard from Quarter, Year, HC, and T&E feeds with dynamic labels, KPIs, drivers, HC, T&E, and actions.",
+    "tags": ["Budget vs Actual", "4 Feeds", "HTML Report"]
   },
   {
     "id": "hcactuals",
@@ -56,7 +56,7 @@
     "path": "./sbc-cost-center-feed/",
     "legacyPath": null,
     "status": "live",
-    "summary": "Generate mapped SBC cost-center feeds, validate totals, and export quarter or consolidated CSVs.",
+    "summary": "Generate mapped SBC cost-center feeds, validate totals, upload mapping files, and export quarter or consolidated CSVs.",
     "tags": ["SBC", "Forecast", "CSV Export"]
   }
 ]
