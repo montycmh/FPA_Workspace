@@ -8,8 +8,6 @@
     edits: {}
   };
 
-  const chartRefs = {};
-
   const monthOrder = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const fiscalOrder = ['Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan'];
   const dom = {
@@ -90,7 +88,7 @@
       showError(err.message || 'Could not build the dashboard from the uploaded feeds.');
     }finally{
       dom.buildBtn.disabled = false;
-      dom.buildBtn.innerHTML = '<i class="ti ti-wand"></i> Generate Dashboard';
+      dom.buildBtn.innerHTML = '<i class="ti ti-wand"></i> Generate Board';
     }
   }
 
@@ -244,13 +242,10 @@
     const monthRow = headerRows[3] || [];
     const metricRow = headerRows[2] || [];
     const out = [];
-    let currentMetric = '';
     for(let c=0;c<monthRow.length;c++){
       const monthLabel = String(monthRow[c]||'').trim();
-      const rawMetric = String(metricRow[c]||'').trim();
-      if(rawMetric) currentMetric = rawMetric;
-      const metric = currentMetric;
-      if(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(monthLabel) && /working|plan/i.test(metric) && !/working\s*vs/i.test(metric)){
+      const metric = String(metricRow[c]||'').trim();
+      if(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(monthLabel) && /working|plan/i.test(metric)){
         out.push({ col:c, monthLabel, metric });
       }
     }
@@ -334,9 +329,6 @@
         preparedBy: parsed.meta.preparedBy
       },
       quarter: {
-        quarterLabel: parsed.quarter.quarterHeader,
-        currentMonthLabel: monthLabel,
-        forecastLabel: parsed.quarter.forecastLabel,
         monthLabels: parsed.quarter.monthLabels,
         expense: quarterExpense,
         l2Rows: l2QuarterRows,
@@ -353,8 +345,6 @@
         currentMonthLabel: monthLabel
       },
       year: {
-        fyToken: parsed.meta.fyToken,
-        forecastLabel: parsed.quarter.forecastLabel,
         elapsedMonths: trend.labels,
         expense: yearExpense,
         l2Rows: l2YearRows,
@@ -504,10 +494,10 @@
   function renderDashboard(model){
     const html = `
       ${renderOverview(model)}
-      ${renderVarianceSection('sec-qplan', `${model.meta.currentQuarterLabel} vs ${model.meta.fyToken} Plan`, model.quarter.topPlan, model.quarter.driverBlocksPlan, model.quarter.l2Rows, 'p', model.quarter.monthLabels, model.quarter.expense.total.w, model.quarter.expense.total.p, `${model.meta.fyToken} Plan`, model.quarter.expense)}
-      ${renderVarianceSection('sec-qfcst', `${model.meta.currentQuarterLabel} vs ${model.meta.forecastLabel}`, model.quarter.topFcst, model.quarter.driverBlocksFcst, model.quarter.l2Rows, 'f', model.quarter.monthLabels, model.quarter.expense.total.w, model.quarter.expense.total.f, model.meta.forecastLabel, model.quarter.expense)}
-      ${renderYearSection('sec-fyplan', `Full Year vs ${model.meta.fyToken} Plan`, model.year.topPlan, model.year.driverBlocksPlan, model.year.l2Rows, 'p', model.year.expense.total.w, model.year.expense.total.p, `${model.meta.fyToken} Plan`, model.year.expense)}
-      ${renderYearSection('sec-fyfcst', `Full Year vs ${model.meta.forecastLabel}`, model.year.topFcst, model.year.driverBlocksFcst, model.year.l2Rows, 'f', model.year.expense.total.w, model.year.expense.total.f, model.meta.forecastLabel, model.year.expense)}
+      ${renderVarianceSection('sec-qplan', `${model.meta.currentQuarterLabel} vs ${model.meta.fyToken} Plan`, model.quarter.topPlan, model.quarter.driverBlocksPlan, model.quarter.l2Rows, 'p', model.quarter.monthLabels, model.quarter.expense.total.w, model.quarter.expense.total.p)}
+      ${renderVarianceSection('sec-qfcst', `${model.meta.currentQuarterLabel} vs ${model.meta.forecastLabel}`, model.quarter.topFcst, model.quarter.driverBlocksFcst, model.quarter.l2Rows, 'f', model.quarter.monthLabels, model.quarter.expense.total.w, model.quarter.expense.total.f)}
+      ${renderYearSection('sec-fyplan', `Full Year vs ${model.meta.fyToken} Plan`, model.year.topPlan, model.year.driverBlocksPlan, model.year.l2Rows, 'p', model.year.expense.total.w, model.year.expense.total.p)}
+      ${renderYearSection('sec-fyfcst', `Full Year vs ${model.meta.forecastLabel}`, model.year.topFcst, model.year.driverBlocksFcst, model.year.l2Rows, 'f', model.year.expense.total.w, model.year.expense.total.f)}
       ${renderTE(model)}
       ${renderHC(model)}
       ${renderActions(model)}
@@ -531,7 +521,7 @@
       </div>
       <div class="sec-hdr"><span>Trend</span><span class="sec-tag">Working vs Plan · elapsed fiscal months</span></div>
       <div class="chart-legend"><div class="legend-key"><span class="legend-swatch work"></span> Working</div><div class="legend-key"><span class="legend-swatch plan dashed"></span> Plan</div></div>
-      <div class="trend-wrap"><canvas id="trendC"></canvas></div><script type="application/json" id="trend-data">${JSON.stringify(model.year.trend)}</script>
+      <div class="trend-wrap"><canvas id="trendC"></canvas></div>
     </section>`;
   }
 
@@ -540,96 +530,86 @@
     return `<div class="kpi-card"><div class="kpi-label">${escapeHtml(label)}</div><div class="kpi-val ${cls}">${fmtK(val)}</div><div class="kpi-sub">${escapeHtml(sub)}</div>${varianceBadge(val)}</div>`;
   }
 
-  function renderVarianceSection(id, title, topBundle, blocks, rows, benchmarkKey, monthLabels, workingEnd, baseStart, benchmarkLabel, totalRow){
-    const labels = [benchmarkLabel, ...topBundle.rows.map(r => cleanLabel(r.label)), 'Others', 'Working'];
+  function renderVarianceSection(id, title, topBundle, blocks, rows, benchmarkKey, monthLabels, workingEnd, baseStart){
+    const labels = ['Benchmark', ...topBundle.rows.map(r => cleanLabel(r.label)), 'Others', 'Working'];
     const vars = [...topBundle.rows.map(r=>r.variance), topBundle.others];
+    const sectionTag = benchmarkKey === 'p' ? 'Plan benchmark' : 'Forecast benchmark';
     return `<section class="sec" id="${id}">
-      <div class="sec-hdr"><span>${escapeHtml(title)}</span><span class="sec-tag">${escapeHtml(benchmarkLabel)}</span></div>
+      <div class="sec-hdr"><span>${escapeHtml(title)}</span><span class="sec-tag">${sectionTag}</span></div>
       <div class="sublbl">Waterfall</div>
       <div class="wf-wrap"><canvas id="${id}-wf"></canvas></div>
       <div class="sublbl">L2 detail</div>
-      <div class="tbl-wrap">${renderQuarterTable(rows, benchmarkKey, monthLabels, totalRow)}</div>
+      <div class="tbl-wrap">${renderQuarterTable(rows, benchmarkKey, monthLabels)}</div>
       <div class="sublbl">Drivers</div>
       ${blocks.map(b => renderDriverBlock(b)).join('') || '<div class="comment-block">No driver block crossed the materiality threshold for this section.</div>'}
       <div class="sublbl">Additional Comments</div>
       <div class="comment-block" data-comment-block="${id}-comments">${renderAdditionalComments(`${id}-comments`)}</div>
-      <script type="application/json" id="${id}-wf-data">${JSON.stringify({labels, baseStart, vars, workingEnd})}</script>
+      <script type="application/json" id="${id}-wf-data">${escapeHtml(JSON.stringify({labels, baseStart, vars, workingEnd}))}</script>
     </section>`;
   }
 
-  function renderYearSection(id, title, topBundle, blocks, rows, benchmarkKey, workingEnd, baseStart, benchmarkLabel, totalRow){
-    const labels = [benchmarkLabel, ...topBundle.rows.map(r => cleanLabel(r.label)), 'Others', 'Working'];
+  function renderYearSection(id, title, topBundle, blocks, rows, benchmarkKey, workingEnd, baseStart){
+    const labels = ['Benchmark', ...topBundle.rows.map(r => cleanLabel(r.label)), 'Others', 'Working'];
     const vars = [...topBundle.rows.map(r=>r.variance), topBundle.others];
     return `<section class="sec" id="${id}">
-      <div class="sec-hdr"><span>${escapeHtml(title)}</span><span class="sec-tag">${escapeHtml(benchmarkLabel)}</span></div>
+      <div class="sec-hdr"><span>${escapeHtml(title)}</span><span class="sec-tag">Full-year view</span></div>
       <div class="sublbl">Waterfall</div>
       <div class="wf-wrap"><canvas id="${id}-wf"></canvas></div>
       <div class="sublbl">L2 detail</div>
-      <div class="tbl-outer"><div class="tbl-inner">${renderYearTable(rows, benchmarkKey, totalRow)}</div></div>
+      <div class="tbl-outer"><div class="tbl-inner">${renderYearTable(rows, benchmarkKey)}</div></div>
       <div class="sublbl">Drivers</div>
       ${blocks.map(b => renderDriverBlock(b)).join('') || '<div class="comment-block">No driver block crossed the materiality threshold for this section.</div>'}
       <div class="sublbl">Additional Comments</div>
       <div class="comment-block" data-comment-block="${id}-comments">${renderAdditionalComments(`${id}-comments`)}</div>
-      <script type="application/json" id="${id}-wf-data">${JSON.stringify({labels, baseStart, vars, workingEnd})}</script>
+      <script type="application/json" id="${id}-wf-data">${escapeHtml(JSON.stringify({labels, baseStart, vars, workingEnd}))}</script>
     </section>`;
   }
 
-  function renderQuarterTable(rows, benchmarkKey, monthLabels, totalRow){
+  function renderQuarterTable(rows, benchmarkKey, monthLabels){
     let h = '<table><thead><tr><th>Category</th><th class="yw">Q Working</th><th>' + (benchmarkKey==='p'?'Q Plan':'Q FCST') + '</th><th class="yv">Q Var</th>';
-    monthLabels.forEach((m) => { h += `<th class="yw">${escapeHtml(m)} W</th><th>${escapeHtml(m)} ${benchmarkKey==='p'?'P':'F'}</th><th class="mv">Var</th>`; });
+    monthLabels.forEach((m, idx) => { h += `<th class="yw">${escapeHtml(m)} W</th><th>${escapeHtml(m)} ${benchmarkKey==='p'?'P':'F'}</th><th class="mv">Var</th>`; });
     h += '</tr></thead><tbody>';
-    const renderRow = (r, forceCls='') => {
+    rows.forEach(r => {
       const qVar = r.total.w - r.total[benchmarkKey];
-      const trCls = forceCls || (r.rowType === 'expense' ? 'tr-exp' : '');
-      let row = `<tr class="${trCls}"><td>${escapeHtml(cleanLabel(r.label))}</td><td class="yw">${fmtK(r.total.w)}</td><td>${fmtK(r.total[benchmarkKey])}</td><td class="yv ${varClass(qVar)}">${fmtK(qVar)}</td>`;
+      const trCls = r.rowType === 'expense' ? 'tr-exp' : '';
+      h += `<tr class="${trCls}"><td>${escapeHtml(cleanLabel(r.label))}</td><td class="yw">${fmtK(r.total.w)}</td><td>${fmtK(r.total[benchmarkKey])}</td><td class="yv ${varClass(qVar)}">${fmtK(qVar)}</td>`;
       r.months.forEach(m => {
         const mv = m.w - m[benchmarkKey];
-        row += `<td class="yw">${fmtK(m.w)}</td><td>${fmtK(m[benchmarkKey])}</td><td class="mv ${varClass(mv)}">${fmtK(mv)}</td>`;
+        h += `<td class="yw">${fmtK(m.w)}</td><td>${fmtK(m[benchmarkKey])}</td><td class="mv ${varClass(mv)}">${fmtK(mv)}</td>`;
       });
-      row += '</tr>';
-      return row;
-    };
-    rows.forEach(r => { h += renderRow(r); });
-    if(totalRow) h += renderRow(totalRow, 'tr-exp total-last');
+      h += '</tr>';
+    });
     h += '</tbody></table>';
     return h;
   }
 
-  function renderYearTable(rows, benchmarkKey, totalRow){
+  function renderYearTable(rows, benchmarkKey){
     let h = '<table><thead><tr><th>Category</th><th class="yw">FY Working</th><th>' + (benchmarkKey==='p'?'FY Plan':'FY FCST') + '</th><th class="yv">FY Var</th>';
-    const quarterLabels = totalRow && totalRow.quarters ? totalRow.quarters.map(q => q.label || 'Q') : ['Q1','Q2','Q3','Q4'];
-    quarterLabels.forEach(q => { h += `<th class="yw">${escapeHtml(q)} W</th><th>${escapeHtml(q)} ${benchmarkKey==='p'?'P':'F'}</th><th class="mv">Var</th>`; });
+    ['Q1','Q2','Q3','Q4'].forEach(q => { h += `<th class="yw">${q} W</th><th>${q} ${benchmarkKey==='p'?'P':'F'}</th><th class="mv">Var</th>`; });
     h += '</tr></thead><tbody>';
-    const renderRow = (r, forceCls='') => {
+    rows.forEach(r => {
       const fyVar = r.total.w - r.total[benchmarkKey];
-      const trCls = forceCls || (r.rowType === 'expense' ? 'tr-exp' : '');
-      let row = `<tr class="${trCls}"><td>${escapeHtml(cleanLabel(r.label))}</td><td class="yw">${fmtK(r.total.w)}</td><td>${fmtK(r.total[benchmarkKey])}</td><td class="yv ${varClass(fyVar)}">${fmtK(fyVar)}</td>`;
+      const trCls = r.rowType === 'expense' ? 'tr-exp' : '';
+      h += `<tr class="${trCls}"><td>${escapeHtml(cleanLabel(r.label))}</td><td class="yw">${fmtK(r.total.w)}</td><td>${fmtK(r.total[benchmarkKey])}</td><td class="yv ${varClass(fyVar)}">${fmtK(fyVar)}</td>`;
       r.quarters.forEach(q => {
         const qVar = q.w - q[benchmarkKey];
-        row += `<td class="yw">${fmtK(q.w)}</td><td>${fmtK(q[benchmarkKey])}</td><td class="mv ${varClass(qVar)}">${fmtK(qVar)}</td>`;
+        h += `<td class="yw">${fmtK(q.w)}</td><td>${fmtK(q[benchmarkKey])}</td><td class="mv ${varClass(qVar)}">${fmtK(qVar)}</td>`;
       });
-      row += '</tr>';
-      return row;
-    };
-    rows.forEach(r => { h += renderRow(r); });
-    if(totalRow) h += renderRow(totalRow, 'tr-exp total-last');
+      h += '</tr>';
+    });
     h += '</tbody></table>';
     return h;
   }
 
   function renderDriverBlock(block){
-    const benchmarkText = block.benchmarkLabel || (block.benchmarkKey==='p' ? 'Plan' : 'FCST');
-    const direction = block.variance < 0 ? 'Favorable' : block.variance > 0 ? 'Unfavorable' : 'On Plan';
     return `<div class="drv-block ${block.variance < 0 ? 'fav-block':'unfav-block'}" id="blk-${block.id}-wrap">
       <div class="drv-block-inner">
         <div class="drv-left">
           <button class="del-block" data-del-block="blk-${block.id}"><i class="ti ti-trash"></i></button>
-          <div class="drv-summary">
-            <div class="drv-title">${escapeHtml(cleanLabel(block.label))}</div>
-            <div class="drv-amount">${fmtK(block.variance)}</div>
-            <div class="drv-benchmark">Working vs ${escapeHtml(benchmarkText)}</div>
-            <div class="drv-direction ${block.variance<0?'fav':'unfav'}">${direction}</div>
-          </div>
+          <span style="font-size:12px;font-weight:600;color:#0f172a;margin-bottom:6px">${escapeHtml(cleanLabel(block.label))}</span>
+          <span style="font-size:2rem;font-weight:700;color:${block.variance<0?'#10b981':'#ef4444'};margin-bottom:4px;line-height:1">${fmtK(block.variance)}</span>
+          <span style="font-size:10px;color:#64748b;margin-bottom:8px">Working vs ${block.benchmarkKey==='p'?'Plan':'FCST'}</span>
+          ${varianceBadge(block.variance)}
         </div>
         <div class="drv-right">
           <div class="drv-vendors-hdr">Vendor Drivers</div>
@@ -682,27 +662,14 @@
 
   function renderHC(model){
     const m = model.hc.movementCounts;
-    const planTotal = model.hc.salaryAccrued.planTotal;
-    const workTotal = model.hc.salaryAccrued.workTotal;
-    const variance = workTotal - planTotal;
     return `<section class="sec" id="sec-hc">
       <div class="sec-hdr"><span>Headcount Cost</span><span class="sec-tag">Salary Accrued + movement</span></div>
-      <div class="hc-grid hc-grid-single">
-        <div class="hc-card hc-card-total">
-          <div class="kpi-label">Total Headcount Cost</div>
-          <div class="hc-total-grid">
-            <div class="hc-total-cell"><div class="k">Plan</div><div class="v">${fmtK(planTotal)}</div></div>
-            <div class="hc-total-cell"><div class="k">Working</div><div class="v ${variance<0?'kpi-fav':variance>0?'kpi-unfav':'kpi-neu'}">${fmtK(workTotal)}</div></div>
-            <div class="hc-total-cell"><div class="k">Variance</div><div class="v ${variance<0?'kpi-fav':variance>0?'kpi-unfav':'kpi-neu'}">${fmtK(variance)}</div><div class="hc-dir ${variance<0?'fav':variance>0?'unfav':'neu'}">${variance<0?'Favorable':variance>0?'Unfavorable':'On Plan'}</div></div>
-          </div>
-          <div class="mini-kpi hc-quarter-grid">
-            ${model.hc.salaryAccrued.q.map((n,i)=>`<div><div class="k">Q${i+1} Plan</div><div class="v">${fmtK(n)}</div></div>`).join('')}
-            ${model.hc.salaryAccrued.qWork.map((n,i)=>`<div><div class="k">Q${i+1} Working</div><div class="v">${fmtK(n)}</div></div>`).join('')}
-          </div>
-        </div>
+      <div class="hc-grid">
+        <div class="hc-card"><div class="kpi-label">Plan Total</div><div class="kpi-val kpi-neu">${fmtK(model.hc.salaryAccrued.planTotal)}</div><div class="mini-kpi">${model.hc.salaryAccrued.q.map((n,i)=>`<div><div class="k">Q${i+1}</div><div class="v">${fmtK(n)}</div></div>`).join('')}</div></div>
+        <div class="hc-card"><div class="kpi-label">Working Total</div><div class="kpi-val ${model.hc.salaryAccrued.workTotal-model.hc.salaryAccrued.planTotal<0?'kpi-fav':'kpi-unfav'}">${fmtK(model.hc.salaryAccrued.workTotal)}</div><div class="mini-kpi">${model.hc.salaryAccrued.qWork.map((n,i)=>`<div><div class="k">Q${i+1}</div><div class="v">${fmtK(n)}</div></div>`).join('')}</div></div>
       </div>
       <div class="sublbl">HC movement</div>
-      <div class="tbl-wrap"><table class="hc-move-table"><thead><tr><th>Metric</th><th class="yw te-center">Plan</th><th class="te-q2 te-center">Working</th><th class="yv te-center">Var</th></tr></thead><tbody>
+      <div class="tbl-wrap"><table><thead><tr><th>Metric</th><th class="yw">Plan</th><th class="te-q2">Working</th><th class="yv">Var</th></tr></thead><tbody>
         ${hcRow('Active Employees', m.activePlan, m.activeWork)}
         ${hcRow('TBH Roles', m.tbhPlan, m.tbhWork)}
         ${hcRow('New Hires (not in plan)', 0, m.newHires)}
@@ -715,7 +682,7 @@
 
   function hcRow(label, plan, work, highlight){
     const variance = work - plan;
-    return `<tr class="${highlight?'tr-exp total-last':''}"><td>${escapeHtml(label)}</td><td class="yw te-center">${plan}</td><td class="te-q2 te-center">${work}</td><td class="yv te-center ${varClass(variance)}">${variance}</td></tr>`;
+    return `<tr class="${highlight?'tr-exp':''}"><td>${escapeHtml(label)}</td><td class="yw">${plan}</td><td class="te-q2">${work}</td><td class="yv ${varClass(variance)}">${variance}</td></tr>`;
   }
 
   function renderActions(model){
@@ -820,23 +787,15 @@
   function downloadHtml(){
     if(!state.model){ toast('Build a dashboard first'); return; }
     saveState();
-    const cssHref = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map(l => l.href);
-    const cssTexts = Array.from(document.querySelectorAll('style')).map(s => s.textContent || '');
-    const layoutCss = cssTexts.join('\n');
-    const title = `BvA ${state.model.meta.dashboardCode} Dashboard`;
-    const bodyContent = dom.root.innerHTML;
-    const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${title}</title>${cssHref.map(h=>`<link rel="stylesheet" href="${h}">`).join('')}<style>${layoutCss}</style><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"><\/script><script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"><\/script></head><body class="download-export"><main class="download-shell">${bodyContent}</main><script>const chartRefs={};function decodeHtmlEntities(str){const ta=document.createElement('textarea');ta.innerHTML=str;return ta.value;}function parseEmbeddedJson(node){const raw=node?String(node.textContent||'').trim():'';if(!raw)return null;try{return JSON.parse(raw);}catch(e){}try{return JSON.parse(decodeHtmlEntities(raw));}catch(e){}return null;}function destroyChart(id){if(chartRefs[id]){try{chartRefs[id].destroy();}catch(e){}delete chartRefs[id];}}function waterfallBounds(base,vars,end){let run=base;let min=Math.min(base,end),max=Math.max(base,end);vars.forEach(v=>{run+=v;min=Math.min(min,run);max=Math.max(max,run);});const pad=Math.max(50000,Math.ceil((max-min)*0.1/50000)*50000||50000);return{min:Math.floor((min-pad)/50000)*50000,max:Math.ceil((max+pad)/50000)*50000};}function buildWF(canvasId,labels,baseVal,varsArr,endVal,yMin,yMax){var bases=[],bars=[],bgs=[],run=baseVal;bases.push(0);bars.push(baseVal);bgs.push('#3b82f6');varsArr.forEach(function(v){bases.push(v<0?run+v:run);bars.push(Math.abs(v));bgs.push(v<0?'#10b981':'#ef4444');run+=v;});bases.push(0);bars.push(endVal);bgs.push('#3b82f6');var canvas=document.getElementById(canvasId);if(!canvas)return;destroyChart(canvasId);chartRefs[canvasId]=new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{data:bases,backgroundColor:'rgba(0,0,0,0)',borderWidth:0,datalabels:{display:false}},{data:bars,backgroundColor:bgs,borderWidth:0,borderRadius:3,datalabels:{display:true,anchor:'end',align:'end',offset:2,color:'#475569',font:{size:9.5,weight:'600'},formatter:function(v,ctx){var i=ctx.dataIndex;if(i===0||i===bars.length-1)return '$'+Math.round((bases[i]+v)/1000)+'K';var o=varsArr[i-1];return (o>0?'+':'-')+'$'+Math.round(Math.abs(o)/1000)+'K';}}}]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:32}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:9.5},color:'#64748b',autoSkip:false,maxRotation:20}},y:{stacked:true,min:yMin,max:yMax,grid:{color:'#f1f5f9'},ticks:{font:{size:9},color:'#64748b',callback:function(v){return '$'+(v/1000).toFixed(0)+'K';}}}},plugins:{legend:{display:false},tooltip:{enabled:false}}});}function renderTrendChart(){const canvas=document.getElementById('trendC'); if(!canvas) return; const node=document.getElementById('trend-data'); if(!node) return; const trend=parseEmbeddedJson(node); if(!trend) return; const allVals=[...trend.working,...trend.plan].filter(n=>Number.isFinite(n)); const min=allVals.length?Math.floor((Math.min(...allVals)-50000)/50000)*50000:0; const max=allVals.length?Math.ceil((Math.max(...allVals)+50000)/50000)*50000:100000; destroyChart('trendC'); chartRefs['trendC']=new Chart(canvas,{type:'line',data:{labels:trend.labels,datasets:[{label:'Working',data:trend.working,borderColor:'#10b981',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#10b981',tension:0.3,datalabels:{display:false}},{label:'Plan',data:trend.plan,borderColor:'#3b82f6',borderWidth:2,pointRadius:5,pointBackgroundColor:'#3b82f6',borderDash:[5,4],tension:0.3,datalabels:{display:false}}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{grid:{display:false},ticks:{font:{size:10},color:'#64748b'}},y:{min,max,grid:{color:'#f1f5f9'},ticks:{font:{size:9},color:'#64748b',callback:function(v){return '$'+(v/1000).toFixed(0)+'K';}}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.dataset.label+': $'+Math.round(c.raw/1000)+'K';}}}}});}function renderAllCharts(){renderTrendChart();['sec-qplan','sec-qfcst','sec-fyplan','sec-fyfcst'].forEach(id=>{const node=document.getElementById(id+'-wf-data');const data=parseEmbeddedJson(node); if(!data) return; const padded=waterfallBounds(data.baseStart,data.vars,data.workingEnd); buildWF(id+'-wf',data.labels,data.baseStart,data.vars,data.workingEnd,padded.min,padded.max);});}window.addEventListener('load', renderAllCharts);<\/script></body></html>`;
+    const clone = document.documentElement.cloneNode(true);
+    clone.querySelectorAll('.hidden, .del-btn, .del-block, .add-act, .mini-btn, .ghost-btn, .topbar-actions, #save-nav, #download-nav').forEach(el => el.remove());
+    const html = '<!DOCTYPE html>\n' + clone.outerHTML;
     const blob = new Blob([html], { type:'text/html' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `bva_${slug(state.model.meta.dashboardCode)}_${slug(state.model.meta.fyToken)}_${slug(state.model.meta.monthToken)}.html`;
     a.click();
     URL.revokeObjectURL(a.href);
-  }
-
-  function downloadPdf(){
-    if(!state.model){ toast('Build a dashboard first'); return; }
-    window.print();
   }
 
   function navTo(sectionId, el){
@@ -858,33 +817,12 @@
     if(navItems[current]) navItems[current].classList.add('active');
   }
 
-  function decodeHtmlEntities(str){
-    const ta = document.createElement('textarea');
-    ta.innerHTML = str;
-    return ta.value;
-  }
-
-  function parseEmbeddedJson(node){
-    const raw = node ? String(node.textContent || '').trim() : '';
-    if(!raw) return null;
-    try{ return JSON.parse(raw); }catch(e){}
-    try{ return JSON.parse(decodeHtmlEntities(raw)); }catch(e){}
-    return null;
-  }
-
-  function destroyChart(id){
-    if(chartRefs[id]){
-      try{ chartRefs[id].destroy(); }catch(e){}
-      delete chartRefs[id];
-    }
-  }
-
   function renderCharts(model){
     renderTrendChart(model.year.trend);
     ['sec-qplan','sec-qfcst','sec-fyplan','sec-fyfcst'].forEach(id => {
       const node = document.getElementById(id + '-wf-data');
-      const data = parseEmbeddedJson(node);
-      if(!data) return;
+      if(!node) return;
+      const data = JSON.parse(node.textContent);
       const padded = waterfallBounds(data.baseStart, data.vars, data.workingEnd);
       buildWF(id + '-wf', data.labels, data.baseStart, data.vars, data.workingEnd, padded.min, padded.max);
     });
@@ -909,8 +847,7 @@
     });
     bases.push(0); bars.push(endVal); bgs.push('#3b82f6');
     var canvas = document.getElementById(canvasId); if (!canvas) return;
-    destroyChart(canvasId);
-    chartRefs[canvasId] = new Chart(canvas, {
+    new Chart(canvas, {
       type: 'bar',
       data: {
         labels: labels,
@@ -947,8 +884,7 @@
     const allVals = [...trend.working, ...trend.plan].filter(n => Number.isFinite(n));
     const min = allVals.length ? Math.floor((Math.min(...allVals) - 50000)/50000)*50000 : 0;
     const max = allVals.length ? Math.ceil((Math.max(...allVals) + 50000)/50000)*50000 : 100000;
-    destroyChart('trendC');
-    chartRefs['trendC'] = new Chart(canvas, {
+    new Chart(canvas, {
       type: 'line',
       data: {
         labels: trend.labels,
