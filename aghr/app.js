@@ -8,20 +8,20 @@ const AGHR_FUTURE   = ['Aug-26','Sep-26','Oct-26','Nov-26','Dec-26','Jan-27','Fe
 const AGHR_MONTHS   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const AGHR_MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-function aghrDragOver(e,id){ e.preventDefault(); document.getElementById(id).style.borderColor='#C4623A'; }
-function aghrDragLeave(id){ document.getElementById(id).style.borderColor='#D3D1C7'; }
-function aghrDrop(e,idx){ e.preventDefault(); document.getElementById('aghr-drop-0').style.borderColor='#D3D1C7'; const f=e.dataTransfer.files[0]; if(f) aghrSetFile(f); }
+function aghrDragOver(e,id){ e.preventDefault(); document.getElementById(id).style.borderColor='#1D9E75'; }
+function aghrDragLeave(id){ document.getElementById(id).style.borderColor='#D5DCE8'; }
+function aghrDrop(e,idx){ e.preventDefault(); document.getElementById('aghr-drop-0').style.borderColor='#D5DCE8'; const f=e.dataTransfer.files[0]; if(f) aghrSetFile(f); }
 function aghrFileSelected(idx,input){ if(input.files[0]) aghrSetFile(input.files[0]); }
 
 function aghrSetFile(file){
   aghrFile = file;
   document.getElementById('aghr-icon-0').className = 'ti ti-file-check';
-  document.getElementById('aghr-icon-0').style.color = '#C4623A';
+  document.getElementById('aghr-icon-0').style.color = '#1D9E75';
   document.getElementById('aghr-label-0').textContent = file.name;
-  document.getElementById('aghr-label-0').style.color = '#993C1D';
+  document.getElementById('aghr-label-0').style.color = '#0F6E56';
   const drop = document.getElementById('aghr-drop-0');
   drop.classList.add('filled');
-  drop.style.borderColor = '#C4623A';
+  drop.style.borderColor = '#1D9E75';
   drop.style.borderStyle = 'solid';
   const btn = document.getElementById('aghr-generate-btn');
   btn.disabled = false;
