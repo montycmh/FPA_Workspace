@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FP&A - Activities Workspace by Monty</title>
+  <title>FP&A · Activities Workspace by Monty</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
   <link rel="stylesheet" href="./assets/shared.css" />
 </head>
@@ -11,26 +11,23 @@
   <main class="workspace-shell">
     <header class="workspace-hero">
       <div class="hero-copy">
-        <div class="hero-kicker">FP&A Workspace</div>
-        <h1>FP&amp;A - Activities Workspace by Monty</h1>
-        <p>Your central workspace for month-end, headcount, budgeting, accruals, and review activities.</p>
-      </div>
-      <div class="hero-stats">
-        <div class="stat-card">
-          <strong id="tool-count">6</strong>
-          <span>Activity workspaces</span>
-        </div>
-        <div class="stat-card">
-          <strong>1</strong>
-          <span>Unified homepage</span>
-        </div>
+        <div class="hero-kicker"><span class="dot"></span>FP&amp;A Workspace</div>
+        <h1>FP&amp;A · Activities Workspace</h1>
+        <div class="hero-byline">by Monty</div>
+        <p>Your central launchpad for month-end, headcount, budgeting, accruals, and review activities — every module one click away, in one unified home.</p>
       </div>
     </header>
 
     <section class="workspace-grid-wrap">
       <div class="section-heading">
-        <h2>Open a workspace</h2>
-        <p>Select the activity you want to run.</p>
+        <div>
+          <h2>Open a module</h2>
+          <p>Select the activity you want to run.</p>
+        </div>
+        <label class="search">
+          <i class="ti ti-search"></i>
+          <input id="search-input" type="text" placeholder="Search modules or tags…" autocomplete="off" spellcheck="false" />
+        </label>
       </div>
       <div id="workspace-grid" class="workspace-grid"></div>
     </section>
