@@ -110,6 +110,7 @@
       restoreSavedState();
       document.getElementById('upload-shell').classList.add('hidden');
       dom.root.classList.remove('hidden');
+      requestAnimationFrame(function(){ document.querySelectorAll('#dashboard-root textarea').forEach(autoResize); });
       if(dom.backNav) dom.backNav.classList.remove('hidden');
       if(dom.homeNav) dom.homeNav.classList.add('hidden');
       dom.sidebarFooter.textContent = model.meta.badgeLabel;
