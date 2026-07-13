@@ -1,4 +1,3 @@
-
 (function(){
   Chart.register(ChartDataLabels);
 
@@ -546,7 +545,7 @@
     const k = model.quarter.kpis;
     const y = model.year.kpis;
     return `<section class="sec" id="sec-overview">
-      <div class="sec-hdr"><span>Performance Overview</span><span class="sec-tag">Prepared by ${escapeHtml(model.meta.preparedBy)} · ${escapeHtml(model.meta.badgeLabel)}</span></div>
+      <div class="sec-hdr"><div class="sec-hdr-left"><span class="sec-ic"><i class="ti ti-layout-dashboard"></i></span><span class="sec-title">Performance Overview</span></div><span class="sec-tag">Prepared by ${escapeHtml(model.meta.preparedBy)} · ${escapeHtml(model.meta.badgeLabel)}</span></div>
       <div class="kpi-grid">
         ${kpiCard(model.quarter.currentMonthLabel, k.kpi1, 'Current Month vs Plan')}
         ${kpiCard(model.quarter.currentMonthLabel, k.kpi2, `Current Month vs ${model.meta.forecastLabel}`)}
@@ -562,14 +561,20 @@
 
   function kpiCard(label, val, sub){
     const cls = val < 0 ? 'kpi-fav' : val > 0 ? 'kpi-unfav' : 'kpi-neu';
-    return `<div class="kpi-card"><div class="kpi-label">${escapeHtml(label)}</div><div class="kpi-val ${cls}">${fmtK(val)}</div><div class="kpi-sub">${escapeHtml(sub)}</div>${varianceBadge(val)}</div>`;
+    const chip = val < 0 ? 'fav' : val > 0 ? 'unfav' : 'plan';
+    let icon = 'ti-chart-bar';
+    if(/month/i.test(sub)) icon = 'ti-calendar-dollar';
+    else if(/full year/i.test(sub)) icon = 'ti-calendar-stats';
+    else if(/quarter/i.test(sub)) icon = 'ti-chart-bar';
+    return `<div class="kpi-card"><div class="kpi-ic ${chip}"><i class="ti ${icon}"></i></div><div class="kpi-label">${escapeHtml(label)}</div><div class="kpi-val ${cls}">${fmtK(val)}</div><div class="kpi-sub">${escapeHtml(sub)}</div>${varianceBadge(val)}</div>`;
   }
 
   function renderVarianceSection(id, title, topBundle, blocks, rows, benchmarkKey, monthLabels, workingEnd, baseStart, benchmarkLabel, totalRow){
+    const secIcon = id.indexOf('fcst') !== -1 ? 'ti-chart-dots-3' : 'ti-trending-down';
     const labels = [benchmarkLabel, ...topBundle.rows.map(r => cleanLabel(r.label)), 'Others', 'Working'];
     const vars = [...topBundle.rows.map(r=>r.variance), topBundle.others];
     return `<section class="sec" id="${id}">
-      <div class="sec-hdr"><span>${escapeHtml(title)}</span><span class="sec-tag">${escapeHtml(benchmarkLabel)}</span></div>
+      <div class="sec-hdr"><div class="sec-hdr-left"><span class="sec-ic"><i class="ti ${secIcon}"></i></span><span class="sec-title">${escapeHtml(title)}</span></div><span class="sec-tag">${escapeHtml(benchmarkLabel)}</span></div>
       <div class="sublbl">Waterfall</div>
       <div class="wf-wrap"><canvas id="${id}-wf"></canvas></div>
       <div class="sublbl">L2 detail</div>
@@ -583,10 +588,11 @@
   }
 
   function renderYearSection(id, title, topBundle, blocks, rows, benchmarkKey, workingEnd, baseStart, benchmarkLabel, totalRow){
+    const secIcon = id.indexOf('fcst') !== -1 ? 'ti-chart-line' : 'ti-calendar-stats';
     const labels = [benchmarkLabel, ...topBundle.rows.map(r => cleanLabel(r.label)), 'Others', 'Working'];
     const vars = [...topBundle.rows.map(r=>r.variance), topBundle.others];
     return `<section class="sec" id="${id}">
-      <div class="sec-hdr"><span>${escapeHtml(title)}</span><span class="sec-tag">${escapeHtml(benchmarkLabel)}</span></div>
+      <div class="sec-hdr"><div class="sec-hdr-left"><span class="sec-ic"><i class="ti ${secIcon}"></i></span><span class="sec-title">${escapeHtml(title)}</span></div><span class="sec-tag">${escapeHtml(benchmarkLabel)}</span></div>
       <div class="sublbl">Waterfall</div>
       <div class="wf-wrap"><canvas id="${id}-wf"></canvas></div>
       <div class="sublbl">L2 detail</div>
@@ -665,12 +671,12 @@
   function renderVendorRow(blockId, idx, vendor){
     const rowId = `${blockId}-${idx}`;
     return `<div class="vrow" id="${rowId}-row">
-      <span style="width:8px;height:8px;border-radius:50%;background:${vendor.variance<0?'#10b981':'#ef4444'};flex-shrink:0;margin-top:3px"></span>
+      <span style="width:8px;height:8px;border-radius:50%;background:${vendor.variance<0?'#16a34a':'#e11d48'};flex-shrink:0;margin-top:3px"></span>
       <div style="flex:1;min-width:0">
         <p style="font-size:11.5px;font-weight:600;color:#0f172a;margin-bottom:3px">${escapeHtml(vendor.name)}</p>
         <textarea class="vedit" rows="2" data-persist="comment:${rowId}">${escapeHtml(vendor.comment || '')}</textarea>
       </div>
-      <span style="font-size:12px;font-weight:600;color:${vendor.variance<0?'#10b981':'#ef4444'};flex-shrink:0;margin-top:2px;min-width:48px;text-align:right">${fmtK(vendor.variance)}</span>
+      <span style="font-size:12px;font-weight:600;color:${vendor.variance<0?'#16a34a':'#e11d48'};flex-shrink:0;margin-top:2px;min-width:48px;text-align:right">${fmtK(vendor.variance)}</span>
       <button class="del-btn" data-del-row="${rowId}"><i class="ti ti-trash"></i></button>
     </div>`;
   }
@@ -684,7 +690,7 @@
     const headers = model.te.headers;
     const firstMonthIdx = 2;
     const lastMonthIdx = headers.length - 2;
-    let h = `<section class="sec" id="sec-te"><div class="sec-hdr"><span>Travel & Expense</span><span class="sec-tag">Employee and vendor detail</span></div><div class="tbl-outer"><table><thead><tr>`;
+    let h = `<section class="sec" id="sec-te"><div class="sec-hdr"><div class="sec-hdr-left"><span class="sec-ic"><i class="ti ti-plane"></i></span><span class="sec-title">Travel & Expense</span></div><span class="sec-tag">Employee and vendor detail</span></div><div class="tbl-outer"><table><thead><tr>`;
     headers.forEach((hdr, idx) => h += `<th class="${idx===firstMonthIdx?'te-q1':''} ${idx===lastMonthIdx?'te-q2':''} ${idx>=1?'te-center':''}">${escapeHtml(hdr)}</th>`);
     h += '</tr></thead><tbody>';
     model.te.rows.forEach(row => {
@@ -702,9 +708,9 @@
     const m = model.hc.movementCounts;
     const variance = model.hc.salaryAccrued.workTotal - model.hc.salaryAccrued.planTotal;
     return `<section class="sec" id="sec-hc">
-      <div class="sec-hdr"><span>Headcount Cost</span><span class="sec-tag">Salary Accrued + movement</span></div>
+      <div class="sec-hdr"><div class="sec-hdr-left"><span class="sec-ic"><i class="ti ti-users"></i></span><span class="sec-title">Headcount Cost</span></div><span class="sec-tag">Salary Accrued + movement</span></div>
       <div class="hc-grid">
-        <div class="hc-card hc-card-wide">
+        <div class="hc-card hc-card-wide hc-work">
           <div class="hc-summary-grid">
             <div class="hc-stat"><div class="kpi-label">Plan Total</div><div class="kpi-val kpi-neu">${fmtK(model.hc.salaryAccrued.planTotal)}</div></div>
             <div class="hc-stat"><div class="kpi-label">Working Total</div><div class="kpi-val ${variance<0?'kpi-fav':'kpi-unfav'}">${fmtK(model.hc.salaryAccrued.workTotal)}</div></div>
@@ -721,7 +727,7 @@
         ${hcRow('Ending HC', m.endingPlan, m.endingWork, true)}
       </tbody></table></div>
       <div class="sublbl">Employee commentary</div>
-      <div>${model.hc.topVarianceEmployees.map((r,i)=>`<div class="hcrow" id="hc-${i}-row"><span style="width:8px;height:8px;border-radius:50%;background:${r.variance<0?'#10b981':'#ef4444'};flex-shrink:0;margin-top:3px"></span><div style="flex:1"><p style="font-size:11.5px;font-weight:600;color:#0f172a;margin-bottom:3px">${escapeHtml(r.name)}</p><textarea class="hc-edit" rows="2" data-persist="comment:hc-${i}">${escapeHtml(r.comment)}</textarea></div><span style="font-size:12px;font-weight:600;color:${r.variance<0?'#10b981':'#ef4444'};min-width:48px;text-align:right">${fmtK(r.variance)}</span><button class="del-btn" data-del-row="hc-${i}"><i class="ti ti-trash"></i></button></div>`).join('')}</div>
+      <div>${model.hc.topVarianceEmployees.map((r,i)=>`<div class="hcrow" id="hc-${i}-row"><span style="width:8px;height:8px;border-radius:50%;background:${r.variance<0?'#16a34a':'#e11d48'};flex-shrink:0;margin-top:3px"></span><div style="flex:1"><p style="font-size:11.5px;font-weight:600;color:#0f172a;margin-bottom:3px">${escapeHtml(r.name)}</p><textarea class="hc-edit" rows="2" data-persist="comment:hc-${i}">${escapeHtml(r.comment)}</textarea></div><span style="font-size:12px;font-weight:600;color:${r.variance<0?'#16a34a':'#e11d48'};min-width:48px;text-align:right">${fmtK(r.variance)}</span><button class="del-btn" data-del-row="hc-${i}"><i class="ti ti-trash"></i></button></div>`).join('')}</div>
     </section>`;
   }
 
@@ -731,7 +737,7 @@
   }
 
   function renderActions(model){
-    return `<section class="sec" id="sec-actions"><div class="sec-hdr"><span>Follow-up Actions</span><span id="actCtr" class="sec-tag">0 of 6 completed</span></div><div class="act-box" id="actList">${model.actions.map((a,i)=>`<div class="act-item" id="act-${i}"><input type="checkbox" class="act-cb" data-act-cb="act-${i}"><textarea class="act-text" rows="1" data-persist="action:act-${i}">${escapeHtml(a)}</textarea><button class="del-btn" data-del-row="act-${i}"><i class="ti ti-trash"></i></button></div>`).join('')}</div><button class="add-act" id="add-act"><i class="ti ti-plus"></i> Add action</button></section>`;
+    return `<section class="sec" id="sec-actions"><div class="sec-hdr"><div class="sec-hdr-left"><span class="sec-ic"><i class="ti ti-checklist"></i></span><span class="sec-title">Follow-up Actions</span></div><span id="actCtr" class="sec-tag">0 of 6 completed</span></div><div class="act-box" id="actList">${model.actions.map((a,i)=>`<div class="act-item" id="act-${i}"><input type="checkbox" class="act-cb" data-act-cb="act-${i}"><textarea class="act-text" rows="1" data-persist="action:act-${i}">${escapeHtml(a)}</textarea><button class="del-btn" data-del-row="act-${i}"><i class="ti ti-trash"></i></button></div>`).join('')}</div><button class="add-act" id="add-act"><i class="ti ti-plus"></i> Add action</button></section>`;
   }
 
   function bindInteractive(model){
@@ -1077,14 +1083,14 @@
 
   function buildWF(canvasId, labels, baseVal, varsArr, endVal, yMin, yMax) {
     var bases=[], bars=[], bgs=[], run=baseVal;
-    bases.push(0); bars.push(baseVal); bgs.push('#3b82f6');
+    bases.push(0); bars.push(baseVal); bgs.push('#4f46e5');
     varsArr.forEach(function(v) {
       bases.push(v < 0 ? run + v : run);
       bars.push(Math.abs(v));
-      bgs.push(v < 0 ? '#10b981' : '#ef4444');
+      bgs.push(v < 0 ? '#16a34a' : '#e11d48');
       run += v;
     });
-    bases.push(0); bars.push(endVal); bgs.push('#3b82f6');
+    bases.push(0); bars.push(endVal); bgs.push('#4f46e5');
     var canvas = document.getElementById(canvasId); if (!canvas) return;
     destroyChart(canvasId);
     chartRefs[canvasId] = new Chart(canvas, {
@@ -1093,7 +1099,7 @@
         labels: labels,
         datasets: [
           { data: bases, backgroundColor: 'rgba(0,0,0,0)', borderWidth: 0, datalabels: { display: false } },
-          { data: bars, backgroundColor: bgs, borderWidth: 0, borderRadius: 3,
+          { data: bars, backgroundColor: bgs, borderWidth: 0, borderRadius: 6,
             datalabels: {
               display: true, anchor: 'end', align: 'end', offset: 2,
               color: '#475569', font: { size: 9.5, weight: '600' },
@@ -1130,8 +1136,8 @@
       data: {
         labels: trend.labels,
         datasets: [
-          { label: 'Working', data: trend.working, borderColor: '#10b981', borderWidth: 2.5, pointRadius: 5, pointBackgroundColor: '#10b981', tension: 0.3, datalabels: { display: false } },
-          { label: 'Plan', data: trend.plan, borderColor: '#3b82f6', borderWidth: 2, pointRadius: 5, pointBackgroundColor: '#3b82f6', borderDash: [5,4], tension: 0.3, datalabels: { display: false } }
+          { label: 'Working', data: trend.working, borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,0.14)', fill: true, borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#16a34a', tension: 0.35, datalabels: { display: false } },
+          { label: 'Plan', data: trend.plan, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.10)', fill: true, borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#2563eb', borderDash: [6,4], tension: 0.35, datalabels: { display: false } }
         ]
       },
       options: {
