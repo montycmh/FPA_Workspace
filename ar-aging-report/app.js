@@ -679,7 +679,8 @@ function calcTopN() {
   RAW.forEach(r => {
     const s = state[r.name];
     t.cur += s.cur; t.b30 += s.b30; t.b60 += s.b60; t.b90 += s.b90; t.b90p += s.b90p;
-    t.tot += s.tot; t.ab90 += s.ab90; t.ab90p += s.ab90p;
+    t.tot += (s.cur + s.b30 + s.b60 + s.b90 + s.b90p); // recalculated from buckets so edits flow through
+    t.ab90 += s.ab90; t.ab90p += s.ab90p;
   });
   t['60p']  = t.b90 + t.b90p;
   t['a60p'] = t.ab90 + t.ab90p;
@@ -781,6 +782,7 @@ function render() {
   // --- Individual customers ---
   RAW.forEach(r => {
     const s = state[r.name];
+    const tot   = s.cur + s.b30 + s.b60 + s.b90 + s.b90p; // recalculated from buckets so edits update the row total
     const c60p  = s.b90 + s.b90p;
     const ca60p = s.ab90 + s.ab90p;
     const fc    = r.flag ? ' flagged' : '';
@@ -794,7 +796,7 @@ function render() {
       editCell(r.name, 'b90',  s.b90) +
       editCell(r.name, 'b90p', s.b90p) +
       '<td class="' + fc + '">' + fmt(c60p) + '</td>' +
-      '<td class="' + fc + '">' + fmt(s.tot) + '</td>' +
+      '<td class="' + fc + '">' + fmt(tot) + '</td>' +
       '<td class="div-col' + fc + '">' + fmt(s.ab90) + '</td>' +
       '<td class="' + fc + '">' + fmt(s.ab90p) + '</td>' +
       '<td class="' + fc + '">' + fmt(ca60p) + '</td>' +
