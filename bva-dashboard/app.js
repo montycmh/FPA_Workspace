@@ -543,6 +543,12 @@
   function renderDashboard(model){
     document.getElementById('upload-shell').classList.add('hidden');
     const html = `
+      <style>
+        #dashboard-root th.tot-col{ background:#e0e7ff !important; color:#312e81 !important; }
+        #dashboard-root td.tot-col{ background:#eef2ff !important; }
+        #dashboard-root th.tot-end, #dashboard-root td.tot-end{ border-right:2px solid #a5b4fc !important; }
+        #dashboard-root th.tot-col:first-of-type, #dashboard-root td.tot-col:first-of-type{ border-left:2px solid #a5b4fc !important; }
+      </style>
       ${renderOverview(model)}
       ${renderVarianceSection('sec-qplan', `${model.meta.currentQuarterLabel} vs ${model.meta.fyToken} Plan`, model.quarter.topPlan, model.quarter.driverBlocksPlan, model.quarter.l2Rows, 'p', model.quarter.monthLabels, model.quarter.expense.total.w, model.quarter.expense.total.p, `${model.meta.fyToken} Plan`, model.quarter.expense)}
       ${renderVarianceSection('sec-qfcst', `${model.meta.currentQuarterLabel} vs ${model.meta.forecastLabel}`, model.quarter.topFcst, model.quarter.driverBlocksFcst, model.quarter.l2Rows, 'f', model.quarter.monthLabels, model.quarter.expense.total.w, model.quarter.expense.total.f, model.meta.forecastLabel, model.quarter.expense)}
@@ -622,7 +628,7 @@
   }
 
   function renderQuarterTable(rows, benchmarkKey, monthLabels, totalRow){
-    let h = '<table><thead><tr><th>Category</th><th class="yw">Q Working</th><th>' + (benchmarkKey==='p'?'Q Plan':'Q FCST') + '</th><th class="yv">Q Var</th>';
+    let h = '<table><thead><tr><th>Category</th><th class="yw tot-col">Q Working</th><th class="tot-col">' + (benchmarkKey==='p'?'Q Plan':'Q FCST') + '</th><th class="yv tot-col tot-end">Q Var</th>';
     monthLabels.forEach((m, idx) => { h += `<th class="yw">${escapeHtml(m)} W</th><th>${escapeHtml(m)} ${benchmarkKey==='p'?'P':'F'}</th><th class="mv">Var</th>`; });
     h += '</tr></thead><tbody>';
     const totalRows = totalRow ? [{ ...totalRow, label: totalRow.label || 'Expense', rowType: 'expense' }] : [];
@@ -630,7 +636,7 @@
     orderedRows.forEach(r => {
       const qVar = r.total.w - r.total[benchmarkKey];
       const trCls = r.rowType === 'expense' ? 'tr-exp' : '';
-      h += `<tr class="${trCls}"><td>${escapeHtml(cleanLabel(r.label))}</td><td class="yw">${fmtK(r.total.w)}</td><td>${fmtK(r.total[benchmarkKey])}</td><td class="yv ${varClass(qVar)}">${fmtK(qVar)}</td>`;
+      h += `<tr class="${trCls}"><td>${escapeHtml(cleanLabel(r.label))}</td><td class="yw tot-col">${fmtK(r.total.w)}</td><td class="tot-col">${fmtK(r.total[benchmarkKey])}</td><td class="yv tot-col tot-end ${varClass(qVar)}">${fmtK(qVar)}</td>`;
       r.months.forEach(m => {
         const mv = m.w - m[benchmarkKey];
         h += `<td class="yw">${fmtK(m.w)}</td><td>${fmtK(m[benchmarkKey])}</td><td class="mv ${varClass(mv)}">${fmtK(mv)}</td>`;
@@ -642,7 +648,7 @@
   }
 
   function renderYearTable(rows, benchmarkKey, totalRow){
-    let h = '<table><thead><tr><th>Category</th><th class="yw">FY Working</th><th>' + (benchmarkKey==='p'?'FY Plan':'FY FCST') + '</th><th class="yv">FY Var</th>';
+    let h = '<table><thead><tr><th>Category</th><th class="yw tot-col">FY Working</th><th class="tot-col">' + (benchmarkKey==='p'?'FY Plan':'FY FCST') + '</th><th class="yv tot-col tot-end">FY Var</th>';
     ['Q1','Q2','Q3','Q4'].forEach(q => { h += `<th class="yw">${q} W</th><th>${q} ${benchmarkKey==='p'?'P':'F'}</th><th class="mv">Var</th>`; });
     h += '</tr></thead><tbody>';
     const totalRows = totalRow ? [{ ...totalRow, label: totalRow.label || 'Expense', rowType: 'expense' }] : [];
@@ -650,7 +656,7 @@
     orderedRows.forEach(r => {
       const fyVar = r.total.w - r.total[benchmarkKey];
       const trCls = r.rowType === 'expense' ? 'tr-exp' : '';
-      h += `<tr class="${trCls}"><td>${escapeHtml(cleanLabel(r.label))}</td><td class="yw">${fmtK(r.total.w)}</td><td>${fmtK(r.total[benchmarkKey])}</td><td class="yv ${varClass(fyVar)}">${fmtK(fyVar)}</td>`;
+      h += `<tr class="${trCls}"><td>${escapeHtml(cleanLabel(r.label))}</td><td class="yw tot-col">${fmtK(r.total.w)}</td><td class="tot-col">${fmtK(r.total[benchmarkKey])}</td><td class="yv tot-col tot-end ${varClass(fyVar)}">${fmtK(fyVar)}</td>`;
       r.quarters.forEach(q => {
         const qVar = q.w - q[benchmarkKey];
         h += `<td class="yw">${fmtK(q.w)}</td><td>${fmtK(q[benchmarkKey])}</td><td class="mv ${varClass(qVar)}">${fmtK(qVar)}</td>`;
