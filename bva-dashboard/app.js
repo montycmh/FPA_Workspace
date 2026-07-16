@@ -187,6 +187,9 @@
     return Number.isFinite(n) ? n : 0;
   }
 
+  // Sum three consecutive month cells (a quarter block stores 3 months per metric).
+  function sum3(row, start){ return v(row[start]) + v(row[start+1]) + v(row[start+2]); }
+
   function fmtK(n){
     if(!Number.isFinite(n) || n === 0) return '—';
     const rounded = Math.round(n / 1000);
@@ -243,25 +246,37 @@
     return { quarterHeader, monthLabels, forecastLabel, dataRows };
   }
 
+  // FIXED: The Year feed lays out each quarter as a 12-column block grouped by
+  // metric (3 months of Working, 3 of Plan, 3 of Forecast, 3 of Working-vs-FCST).
+  // Column map (0-indexed array from sheet_to_json):
+  //   FY Total: Working=1, Plan=2, Forecast=3, (WvF=4)
+  //   Q1 -> Working 5,6,7 | Plan 8,9,10  | Fcst 11,12,13
+  //   Q2 -> Working 17,18,19 | Plan 20,21,22 | Fcst 23,24,25
+  //   Q3 -> Working 29,30,31 | Plan 32,33,34 | Fcst 35,36,37
+  //   Q4 -> Working 41,42,43 | Plan 44,45,46 | Fcst 47,48,49
+  // Each quarter total = sum of its three monthly cells per metric.
   function parseYearFeed(wb, meta){
     const rows = wb.rows;
     const headerRows = rows.slice(0,4);
+    const qBases = [5, 17, 29, 41]; // start index of each quarter's Working months
+    const qLabelRow = rows[1] || [];
     const dataRows = [];
     for(let i=4;i<rows.length;i++){
       const label = String(rows[i][0] || '').trim();
       if(!label) continue;
+      const raw = rows[i];
       dataRows.push({
         index: i,
         label,
         rowType: classifyRow(label),
-        __raw: rows[i],
-        total: { w:v(rows[i][1]), p:v(rows[i][2]), f:v(rows[i][3]) },
-        quarters: [
-          { label: String(rows[1][5]||'Q1').trim(), w:v(rows[i][5]), p:v(rows[i][6]), f:v(rows[i][7]) },
-          { label: String(rows[1][9]||'Q2').trim(), w:v(rows[i][9]), p:v(rows[i][10]), f:v(rows[i][11]) },
-          { label: String(rows[1][13]||'Q3').trim(), w:v(rows[i][13]), p:v(rows[i][14]), f:v(rows[i][15]) },
-          { label: String(rows[1][17]||'Q4').trim(), w:v(rows[i][17]), p:v(rows[i][18]), f:v(rows[i][19]) }
-        ]
+        __raw: raw,
+        total: { w:v(raw[1]), p:v(raw[2]), f:v(raw[3]) },
+        quarters: qBases.map((b, qi) => ({
+          label: String(qLabelRow[b] || ('Q' + (qi+1))).trim(),
+          w: sum3(raw, b),      // Working  = 3 month cells
+          p: sum3(raw, b + 3),  // Plan     = next 3 month cells
+          f: sum3(raw, b + 6)   // Forecast = next 3 month cells
+        }))
       });
     }
 
@@ -459,7 +474,7 @@
     const expenseRow = yearFeed.dataRows.find(r => r.label === expenseLabel) || yearFeed.dataRows.find(r => r.rowType === 'expense');
     const cutoff = fiscalOrder.indexOf(monthToken);
     const allowed = cutoff >= 0 ? fiscalOrder.slice(0, cutoff + 1) : fiscalOrder.slice(0, 1);
-    const workingCols = yearFeed.monthCols.filter(c => /working/i.test(c.metric));
+    const workingCols = yearFeed.monthCols.filter(c => /working/i.test(c.metric) && !/vs/i.test(c.metric));
     const planCols = yearFeed.monthCols.filter(c => /plan/i.test(c.metric));
     const labels = [];
     const working = [];
@@ -1103,7 +1118,7 @@
           { data: bars, backgroundColor: bgs, borderWidth: 0, borderRadius: 6,
             datalabels: {
               display: true, anchor: 'end', align: 'end', offset: 2,
-              color: '#475569', font: { size: 9.5, weight: '600' },
+              color: '#334155', font: { size: 13, weight: '700' },
               formatter: function(v, ctx) {
                 var i = ctx.dataIndex;
                 if (i === 0 || i === bars.length - 1) return '$' + Math.round((bases[i] + v) / 1000) + 'K';
@@ -1115,7 +1130,7 @@
         ]
       },
       options: {
-        responsive: true, maintainAspectRatio: false, layout: { padding: { top: 32 } },
+        responsive: true, maintainAspectRatio: false, layout: { padding: { top: 44 } },
         scales: {
           x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9.5 }, color: '#64748b', autoSkip: false, maxRotation: 20 } },
           y: { stacked: true, min: yMin, max: yMax, grid: { color: '#f1f5f9' }, ticks: { font: { size: 9 }, color: '#64748b', callback: function(v) { return '$' + (v/1000).toFixed(0) + 'K'; } } }
