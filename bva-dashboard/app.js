@@ -7,6 +7,7 @@
     edits: {}
   };
   const chartRefs = {};
+  let REVIEW_MONTH_IDX = -1, REVIEW_Q_IDX = -1;
 
   const monthOrder = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const fiscalOrder = ['Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan'];
@@ -542,12 +543,18 @@
 
   function renderDashboard(model){
     document.getElementById('upload-shell').classList.add('hidden');
+    REVIEW_MONTH_IDX = model.quarter.monthLabels.findIndex(m => normalizeMonth(m) === model.meta.monthToken);
+    REVIEW_Q_IDX = quarterNum(model.meta.currentQuarterLabel);
     const html = `
       <style>
         #dashboard-root th.tot-col{ background:#e0e7ff !important; color:#312e81 !important; }
         #dashboard-root td.tot-col{ background:#eef2ff !important; }
         #dashboard-root th.tot-end, #dashboard-root td.tot-end{ border-right:2px solid #a5b4fc !important; }
         #dashboard-root th.tot-col:first-of-type, #dashboard-root td.tot-col:first-of-type{ border-left:2px solid #a5b4fc !important; }
+        #dashboard-root th.rev-col{ background:#e0e7ff !important; color:#312e81 !important; }
+        #dashboard-root td.rev-col{ background:#eef2ff !important; }
+        #dashboard-root th.rev-start, #dashboard-root td.rev-start{ border-left:2px solid #a5b4fc !important; }
+        #dashboard-root th.rev-end, #dashboard-root td.rev-end{ border-right:2px solid #a5b4fc !important; }
       </style>
       ${renderOverview(model)}
       ${renderVarianceSection('sec-qplan', `${model.meta.currentQuarterLabel} vs ${model.meta.fyToken} Plan`, model.quarter.topPlan, model.quarter.driverBlocksPlan, model.quarter.l2Rows, 'p', model.quarter.monthLabels, model.quarter.expense.total.w, model.quarter.expense.total.p, `${model.meta.fyToken} Plan`, model.quarter.expense)}
@@ -629,7 +636,7 @@
 
   function renderQuarterTable(rows, benchmarkKey, monthLabels, totalRow){
     let h = '<table><thead><tr><th>Category</th><th class="yw tot-col">Q Working</th><th class="tot-col">' + (benchmarkKey==='p'?'Q Plan':'Q FCST') + '</th><th class="yv tot-col tot-end">Q Var</th>';
-    monthLabels.forEach((m, idx) => { h += `<th class="yw">${escapeHtml(m)} W</th><th>${escapeHtml(m)} ${benchmarkKey==='p'?'P':'F'}</th><th class="mv">Var</th>`; });
+    monthLabels.forEach((m, idx) => { const rv = idx===REVIEW_MONTH_IDX; h += `<th class="yw${rv?' rev-col rev-start':''}">${escapeHtml(m)} W</th><th class="${rv?'rev-col':''}">${escapeHtml(m)} ${benchmarkKey==='p'?'P':'F'}</th><th class="mv${rv?' rev-col rev-end':''}">Var</th>`; });
     h += '</tr></thead><tbody>';
     const totalRows = totalRow ? [{ ...totalRow, label: totalRow.label || 'Expense', rowType: 'expense' }] : [];
     const orderedRows = rows.filter(r => r.rowType !== 'expense').concat(totalRows);
@@ -637,9 +644,10 @@
       const qVar = r.total.w - r.total[benchmarkKey];
       const trCls = r.rowType === 'expense' ? 'tr-exp' : '';
       h += `<tr class="${trCls}"><td>${escapeHtml(cleanLabel(r.label))}</td><td class="yw tot-col">${fmtK(r.total.w)}</td><td class="tot-col">${fmtK(r.total[benchmarkKey])}</td><td class="yv tot-col tot-end ${varClass(qVar)}">${fmtK(qVar)}</td>`;
-      r.months.forEach(m => {
+      r.months.forEach((m, idx) => {
         const mv = m.w - m[benchmarkKey];
-        h += `<td class="yw">${fmtK(m.w)}</td><td>${fmtK(m[benchmarkKey])}</td><td class="mv ${varClass(mv)}">${fmtK(mv)}</td>`;
+        const rv = idx===REVIEW_MONTH_IDX;
+        h += `<td class="yw${rv?' rev-col rev-start':''}">${fmtK(m.w)}</td><td class="${rv?'rev-col':''}">${fmtK(m[benchmarkKey])}</td><td class="mv${rv?' rev-col rev-end':''} ${varClass(mv)}">${fmtK(mv)}</td>`;
       });
       h += '</tr>';
     });
@@ -649,7 +657,7 @@
 
   function renderYearTable(rows, benchmarkKey, totalRow){
     let h = '<table><thead><tr><th>Category</th><th class="yw tot-col">FY Working</th><th class="tot-col">' + (benchmarkKey==='p'?'FY Plan':'FY FCST') + '</th><th class="yv tot-col tot-end">FY Var</th>';
-    ['Q1','Q2','Q3','Q4'].forEach(q => { h += `<th class="yw">${q} W</th><th>${q} ${benchmarkKey==='p'?'P':'F'}</th><th class="mv">Var</th>`; });
+    ['Q1','Q2','Q3','Q4'].forEach((q, idx) => { const rv = idx===REVIEW_Q_IDX; h += `<th class="yw${rv?' rev-col rev-start':''}">${q} W</th><th class="${rv?'rev-col':''}">${q} ${benchmarkKey==='p'?'P':'F'}</th><th class="mv${rv?' rev-col rev-end':''}">Var</th>`; });
     h += '</tr></thead><tbody>';
     const totalRows = totalRow ? [{ ...totalRow, label: totalRow.label || 'Expense', rowType: 'expense' }] : [];
     const orderedRows = rows.filter(r => r.rowType !== 'expense').concat(totalRows);
@@ -657,9 +665,10 @@
       const fyVar = r.total.w - r.total[benchmarkKey];
       const trCls = r.rowType === 'expense' ? 'tr-exp' : '';
       h += `<tr class="${trCls}"><td>${escapeHtml(cleanLabel(r.label))}</td><td class="yw tot-col">${fmtK(r.total.w)}</td><td class="tot-col">${fmtK(r.total[benchmarkKey])}</td><td class="yv tot-col tot-end ${varClass(fyVar)}">${fmtK(fyVar)}</td>`;
-      r.quarters.forEach(q => {
+      r.quarters.forEach((q, idx) => {
         const qVar = q.w - q[benchmarkKey];
-        h += `<td class="yw">${fmtK(q.w)}</td><td>${fmtK(q[benchmarkKey])}</td><td class="mv ${varClass(qVar)}">${fmtK(qVar)}</td>`;
+        const rv = idx===REVIEW_Q_IDX;
+        h += `<td class="yw${rv?' rev-col rev-start':''}">${fmtK(q.w)}</td><td class="${rv?'rev-col':''}">${fmtK(q[benchmarkKey])}</td><td class="mv${rv?' rev-col rev-end':''} ${varClass(qVar)}">${fmtK(qVar)}</td>`;
       });
       h += '</tr>';
     });
@@ -1173,6 +1182,7 @@
     });
   }
 
+  function quarterNum(label){ const m = String(label||'').match(/Q\s*([1-4])/i); return m ? parseInt(m[1],10)-1 : -1; }
   function cleanLabel(label){ return String(label||'').replace(/^Total\s+/,''); }
   function slug(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
   function escapeHtml(str){ return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
