@@ -555,6 +555,12 @@
         #dashboard-root td.rev-col{ background:#eef2ff !important; }
         #dashboard-root th.rev-start, #dashboard-root td.rev-start{ border-left:2px solid #a5b4fc !important; }
         #dashboard-root th.rev-end, #dashboard-root td.rev-end{ border-right:2px solid #a5b4fc !important; }
+        #dashboard-root textarea.vedit,
+        #dashboard-root textarea.hc-edit,
+        #dashboard-root textarea.act-text,
+        #dashboard-root .add-comment-input{ font-size:13.5px !important; line-height:1.5 !important; color:#0f172a !important; }
+        #dashboard-root .vrow p,
+        #dashboard-root .hcrow p{ font-size:13px !important; }
       </style>
       ${renderOverview(model)}
       ${renderVarianceSection('sec-qplan', `${model.meta.currentQuarterLabel} vs ${model.meta.fyToken} Plan`, model.quarter.topPlan, model.quarter.driverBlocksPlan, model.quarter.l2Rows, 'p', model.quarter.monthLabels, model.quarter.expense.total.w, model.quarter.expense.total.p, `${model.meta.fyToken} Plan`, model.quarter.expense)}
@@ -966,6 +972,12 @@
     try{
       if(nav) nav.classList.add('disabled-nav');
       const cssText = await fetchInlineCss();
+      // Persist current field values into the DOM so the clone captures typed text.
+      document.querySelectorAll('#dashboard-root textarea').forEach(t => { t.textContent = t.value; });
+      document.querySelectorAll('#dashboard-root input').forEach(i => {
+        if(i.type === 'checkbox'){ if(i.checked) i.setAttribute('checked','checked'); else i.removeAttribute('checked'); }
+        else { i.setAttribute('value', i.value); }
+      });
       const clone = document.documentElement.cloneNode(true);
       clone.querySelectorAll('.hidden, .del-btn, .del-block, .add-act, .mini-btn, .ghost-btn, .topbar-actions, #save-nav, #download-nav, #download-pdf-nav, #back-nav, #home-nav').forEach(el => el.remove());
       freezeCanvasesAsImages(clone);
