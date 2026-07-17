@@ -202,6 +202,13 @@
     return '-$' + abs + 'K';
   }
 
+  function fmtKplain(n){
+    if(!Number.isFinite(n) || n === 0) return '—';
+    const rounded = Math.round(n / 1000);
+    const abs = Math.abs(rounded).toLocaleString('en-US');
+    return rounded < 0 ? '($' + abs + 'K)' : '$' + abs + 'K';
+  }
+
   function varClass(n){
     if(!n) return 'var-neu';
     return n < 0 ? 'var-fav' : 'var-unfav';
@@ -722,7 +729,7 @@
   }
 
   function renderAdditionalComments(id){
-    return [0,1,2].map(i => `<div class="comment-row" id="${id}-${i}-row"><textarea class="vedit" rows="2" data-persist="comment:${id}-${i}" placeholder="Additional comment..."></textarea><button class="del-btn" data-del-row="${id}-${i}"><i class="ti ti-trash"></i></button></div>`).join('') +
+    return [].map(i => `<div class="comment-row" id="${id}-${i}-row"><textarea class="vedit" rows="2" data-persist="comment:${id}-${i}" placeholder="Additional comment..."></textarea><button class="del-btn" data-del-row="${id}-${i}"><i class="ti ti-trash"></i></button></div>`).join('') +
       `<div class="inline-add"><input class="add-comment-input" data-add-input="${id}" placeholder="Add comment row..." /><button class="mini-btn" data-add-comment="${id}"><i class="ti ti-plus"></i></button></div>`;
   }
 
@@ -738,14 +745,14 @@
     let h = `<section class="sec" id="sec-te"><div class="sec-hdr"><div class="sec-hdr-left"><span class="sec-ic"><i class="ti ti-plane"></i></span><span class="sec-title">Travel & Expense</span></div><span class="sec-tag">Employee and vendor detail</span></div><div class="tbl-outer"><table><thead><tr>`;
     headers.forEach((hdr, idx) => h += `<th class="${idx===firstMonthIdx?'te-q1':''} ${idx===lastMonthIdx?'te-q2':''} ${idx>=1?'te-center':''}">${escapeHtml(hdr)}</th>`);
     h += '</tr></thead><tbody>';
-    model.te.rows.forEach(row => {
+    model.te.rows.filter(row => Number.isFinite(row.grandTotal) && row.grandTotal !== 0).forEach(row => {
       h += `<tr><td>${escapeHtml(row.employee)}</td><td class="te-center">${escapeHtml(row.vendor)}</td>`;
-      row.values.forEach((n, idx) => h += `<td class="te-center ${idx===0?'te-q1':''} ${idx===row.values.length-1?'te-q2':''}">${fmtK(n)}</td>`);
-      h += `<td class="te-center">${fmtK(row.grandTotal)}</td></tr>`;
+      row.values.forEach((n, idx) => h += `<td class="te-center ${idx===0?'te-q1':''} ${idx===row.values.length-1?'te-q2':''}">${fmtKplain(n)}</td>`);
+      h += `<td class="te-center">${fmtKplain(row.grandTotal)}</td></tr>`;
     });
     h += `<tr class="tr-exp"><td>${escapeHtml(model.te.totalRow.employee)}</td><td></td>`;
-    model.te.totalRow.values.forEach((n, idx) => h += `<td class="te-center ${idx===0?'te-qt1':''} ${idx===model.te.totalRow.values.length-1?'te-qt2':''}">${fmtK(n)}</td>`);
-    h += `<td class="te-center te-grand">${fmtK(model.te.totalRow.grandTotal)}</td></tr></tbody></table></div></section>`;
+    model.te.totalRow.values.forEach((n, idx) => h += `<td class="te-center ${idx===0?'te-qt1':''} ${idx===model.te.totalRow.values.length-1?'te-qt2':''}">${fmtKplain(n)}</td>`);
+    h += `<td class="te-center te-grand">${fmtKplain(model.te.totalRow.grandTotal)}</td></tr></tbody></table></div></section>`;
     return h;
   }
 
