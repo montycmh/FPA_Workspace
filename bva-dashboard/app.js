@@ -55,7 +55,7 @@
   });
 
   function updateBuildButton(){
-    const ready = Object.values(state.files).every(Boolean);
+    const ready = !!(state.files.quarter && state.files.year);
     dom.buildBtn.disabled = !ready;
   }
 
@@ -77,7 +77,7 @@
     if(dom.homeNav) dom.homeNav.classList.remove('hidden');
     showError('');
     document.getElementById('upload-shell').classList.remove('hidden');
-    dom.sidebarFooter.textContent = 'Upload the 4 feeds to generate a board.';
+    dom.sidebarFooter.textContent = 'Upload Quarter and Year feeds to generate a board (HC and T&E optional).';
     document.querySelectorAll('aside nav ul li').forEach((li, idx) => li.classList.toggle('active', idx===0));
     uploadMap.forEach(([key, input, labelId]) => {
       input.value = '';
@@ -126,15 +126,18 @@
 
   async function parseFiles(files){
     const [quarterWb, yearWb, hcWb, teWb] = await Promise.all([
-      readWorkbook(files.quarter), readWorkbook(files.year), readWorkbook(files.hc), readWorkbook(files.te)
+      readWorkbook(files.quarter),
+      readWorkbook(files.year),
+      files.hc ? readWorkbook(files.hc) : Promise.resolve(null),
+      files.te ? readWorkbook(files.te) : Promise.resolve(null)
     ]);
     const meta = parseMeta(files.quarter.name);
     return {
       meta,
       quarter: parseQuarterFeed(quarterWb),
       year: parseYearFeed(yearWb, meta),
-      hc: parseHcFeed(hcWb),
-      te: parseTeFeed(teWb)
+      hc: hcWb ? parseHcFeed(hcWb) : null,
+      te: teWb ? parseTeFeed(teWb) : null
     };
   }
 
@@ -363,9 +366,9 @@
     const yearDriverBlocksPlan = deriveYearDriverBlocks(parsed.year, yearPlanVar, 'p', 75000);
     const yearDriverBlocksFcst = deriveYearDriverBlocks(parsed.year, yearFcstVar, 'f', 75000);
 
-    const hc = deriveHc(parsed.hc);
+    const hc = parsed.hc ? deriveHc(parsed.hc) : null;
     const trend = deriveTrend(parsed.year, parsed.meta.monthToken, yearExpense.label);
-    const te = deriveTe(parsed.te);
+    const te = parsed.te ? deriveTe(parsed.te) : null;
     const actions = deriveActions(parsed, quarterTopPlan, yearTopPlan, quarterDriverBlocksPlan, hc, te);
 
     return {
@@ -536,7 +539,7 @@
     quarterTopPlan.rows.slice(0,2).forEach(r => actions.push(`Review ${r.label} at ${fmtK(r.variance)} versus plan and confirm whether the quarter run-rate should persist.`));
     yearTopPlan.rows.slice(0,2).forEach(r => actions.push(`Confirm the full-year outlook for ${r.label}; current variance is ${fmtK(r.variance)} versus plan.`));
     if(qBlocks[0] && qBlocks[0].vendors[0]) actions.push(`Validate the vendor driver for ${qBlocks[0].label}, especially ${qBlocks[0].vendors[0].name}.`);
-    if(hc.topVarianceEmployees[0]) actions.push(`Confirm HC variance driver for ${hc.topVarianceEmployees[0].name} and whether it reflects start timing, transfer, or comp variance.`);
+    if(hc && hc.topVarianceEmployees[0]) actions.push(`Confirm HC variance driver for ${hc.topVarianceEmployees[0].name} and whether it reflects start timing, transfer, or comp variance.`);
     while(actions.length < 6) actions.push('Review any remaining variance outside the top drivers and confirm whether follow-up is needed before close.');
     return actions.slice(0,6);
   }
@@ -723,7 +726,12 @@
       `<div class="inline-add"><input class="add-comment-input" data-add-input="${id}" placeholder="Add comment row..." /><button class="mini-btn" data-add-comment="${id}"><i class="ti ti-plus"></i></button></div>`;
   }
 
+  function renderNoActivity(id, icon, title, tag){
+    return `<section class="sec" id="${id}"><div class="sec-hdr"><div class="sec-hdr-left"><span class="sec-ic"><i class="ti ${icon}"></i></span><span class="sec-title">${escapeHtml(title)}</span></div><span class="sec-tag">${escapeHtml(tag)}</span></div><div class="comment-block" style="text-align:center;padding:30px 16px;color:#64748b;font-size:14px;font-weight:600"><i class="ti ti-info-circle" style="font-size:20px;display:block;margin-bottom:8px;color:#94a3b8"></i>No activity registered for this period.</div></section>`;
+  }
+
   function renderTE(model){
+    if(!model.te) return renderNoActivity('sec-te','ti-plane','Travel & Expense','No activity');
     const headers = model.te.headers;
     const firstMonthIdx = 2;
     const lastMonthIdx = headers.length - 2;
@@ -742,6 +750,7 @@
   }
 
   function renderHC(model){
+    if(!model.hc) return renderNoActivity('sec-hc','ti-users','Headcount Cost','No activity');
     const m = model.hc.movementCounts;
     const variance = model.hc.salaryAccrued.workTotal - model.hc.salaryAccrued.planTotal;
     return `<section class="sec" id="sec-hc">
