@@ -26,6 +26,7 @@
           <li data-nav="sec-te"><i class="ti ti-plane"></i> T&amp;E</li>
           <li data-nav="sec-hc"><i class="ti ti-users"></i> Headcount</li>
           <li data-nav="sec-actions"><i class="ti ti-checklist"></i> Actions</li>
+          <li id="budget-util-nav" class="hidden"><i class="ti ti-gauge"></i> Budget Utilization</li>
           <li id="save-nav"><i class="ti ti-device-floppy"></i> Save</li>
           <li id="download-nav"><i class="ti ti-download"></i> Download HTML</li>
           <li id="download-pdf-nav"><i class="ti ti-file-type-pdf"></i> Download PDF</li>
@@ -56,7 +57,7 @@
     <section class="sec intro" id="upload-shell">
       <div class="sec-hdr">
         <span>Required feeds</span>
-        <span class="sec-tag">4 files per run</span>
+        <span class="sec-tag">Quarter &amp; Year required · HC, T&amp;E &amp; OPEX optional</span>
       </div>
       <div class="upload-grid">
         <label class="upload-card" for="quarter-file">
@@ -86,6 +87,13 @@
           <div class="upload-sub">Travel &amp; expense feed</div>
           <div class="upload-name" id="te-name">Choose file</div>
           <input type="file" id="te-file" accept=".xlsx,.xls" hidden />
+        </label>
+        <label class="upload-card" for="opex-file">
+          <div class="upload-icon"><i class="ti ti-file-spreadsheet"></i></div>
+          <div class="upload-title">OPEX</div>
+          <div class="upload-sub">OPEX Feed (optional)</div>
+          <div class="upload-name" id="opex-name">Choose file</div>
+          <input type="file" id="opex-file" accept=".xlsx,.xls" hidden />
         </label>
       </div>
       <div class="note-strip">
