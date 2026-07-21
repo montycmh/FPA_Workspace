@@ -2,7 +2,7 @@
   Chart.register(ChartDataLabels);
 
   const state = {
-    files: { quarter:null, year:null, hc:null, te:null },
+    files: { quarter:null, year:null, hc:null, te:null, opex:null },
     model: null,
     edits: {}
   };
@@ -16,6 +16,8 @@
     yearFile: document.getElementById('year-file'),
     hcFile: document.getElementById('hc-file'),
     teFile: document.getElementById('te-file'),
+    opexFile: document.getElementById('opex-file'),
+    budgetUtilNav: document.getElementById('budget-util-nav'),
     buildBtn: document.getElementById('build-btn'),
     resetBtn: document.getElementById('reset-btn'),
     backNav: document.getElementById('back-nav'),
@@ -29,7 +31,8 @@
     ['quarter', dom.quarterFile, 'quarter-name'],
     ['year', dom.yearFile, 'year-name'],
     ['hc', dom.hcFile, 'hc-name'],
-    ['te', dom.teFile, 'te-name']
+    ['te', dom.teFile, 'te-name'],
+    ['opex', dom.opexFile, 'opex-name']
   ];
 
   uploadMap.forEach(([key, input, labelId]) => {
@@ -53,6 +56,7 @@
   document.querySelectorAll('aside nav ul li[data-nav]').forEach(li => {
     li.addEventListener('click', () => navTo(li.dataset.nav, li));
   });
+  if(dom.budgetUtilNav) dom.budgetUtilNav.addEventListener('click', openBudgetUtilization);
 
   function updateBuildButton(){
     const ready = !!(state.files.quarter && state.files.year);
@@ -70,11 +74,12 @@
   function resetAll(){
     state.model = null;
     state.edits = {};
-    state.files = { quarter:null, year:null, hc:null, te:null };
+    state.files = { quarter:null, year:null, hc:null, te:null, opex:null };
     dom.root.innerHTML = '';
     dom.root.classList.add('hidden');
     if(dom.backNav) dom.backNav.classList.add('hidden');
     if(dom.homeNav) dom.homeNav.classList.remove('hidden');
+    if(dom.budgetUtilNav) dom.budgetUtilNav.classList.add('hidden');
     showError('');
     document.getElementById('upload-shell').classList.remove('hidden');
     dom.sidebarFooter.textContent = 'Upload Quarter and Year feeds to generate a board (HC and T&E optional).';
@@ -94,6 +99,7 @@
     dom.root.classList.add('hidden');
     if(dom.backNav) dom.backNav.classList.add('hidden');
     if(dom.homeNav) dom.homeNav.classList.remove('hidden');
+    if(dom.budgetUtilNav) dom.budgetUtilNav.classList.add('hidden');
     showError('');
     document.querySelectorAll('aside nav ul li').forEach((li, idx) => li.classList.toggle('active', idx===0));
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -114,6 +120,7 @@
       requestAnimationFrame(function(){ document.querySelectorAll('#dashboard-root textarea').forEach(autoResize); });
       if(dom.backNav) dom.backNav.classList.remove('hidden');
       if(dom.homeNav) dom.homeNav.classList.add('hidden');
+      if(dom.budgetUtilNav) dom.budgetUtilNav.classList.toggle('hidden', !model.opex);
       dom.sidebarFooter.textContent = model.meta.badgeLabel;
     }catch(err){
       console.error(err);
@@ -125,19 +132,22 @@
   }
 
   async function parseFiles(files){
-    const [quarterWb, yearWb, hcWb, teWb] = await Promise.all([
+    const [quarterWb, yearWb, hcWb, teWb, opexWb] = await Promise.all([
       readWorkbook(files.quarter),
       readWorkbook(files.year),
       files.hc ? readWorkbook(files.hc) : Promise.resolve(null),
-      files.te ? readWorkbook(files.te) : Promise.resolve(null)
+      files.te ? readWorkbook(files.te) : Promise.resolve(null),
+      files.opex ? readWorkbook(files.opex) : Promise.resolve(null)
     ]);
     const meta = parseMeta(files.quarter.name);
+    const opexMeta = files.opex ? parseOpexMeta(files.opex.name) : null;
     return {
       meta,
       quarter: parseQuarterFeed(quarterWb),
       year: parseYearFeed(yearWb, meta),
       hc: hcWb ? parseHcFeed(hcWb) : null,
-      te: teWb ? parseTeFeed(teWb) : null
+      te: teWb ? parseTeFeed(teWb) : null,
+      opex: opexWb ? parseOpexFeed(opexWb, opexMeta) : null
     };
   }
 
@@ -344,6 +354,25 @@
     return { monthHeaders, detailRows, totalRow };
   }
 
+  // Nomenclatura: <BU>_OPEXPLAN_<Mmm><YY>  ej. "IT_OPEXPLAN_Jun26"
+  //   businessUnit = texto antes del primer "_"
+  //   month token  = texto despues del ultimo "_"  (Jun26 -> Jun + 26)
+  function parseOpexMeta(filename){
+    const cleaned = String(filename||'').replace(/\.xlsx?$/i,'');
+    const parts = cleaned.split('_');
+    const businessUnit = parts.length ? parts[0].trim() : '';
+    const monthRaw = parts.length > 1 ? parts[parts.length-1].trim() : '';
+    const mMatch = monthRaw.match(/^([A-Za-z]{3,9})[ '\-]?(\d{2,4})?$/);
+    const monthToken = mMatch ? normalizeMonth(mMatch[1]) : normalizeMonth(monthRaw);
+    const yearToken = mMatch && mMatch[2] ? mMatch[2] : '';
+    return { businessUnit, monthToken, yearToken, monthRaw, label: 'OPEX Feed' };
+  }
+
+  // Conserva filas y libro crudos para la vista Budget Utilization.
+  function parseOpexFeed(wb, meta){
+    return { meta: meta || {}, rows: wb.rows, workbook: wb.workbook, sheet: wb.sheet };
+  }
+
   function deriveModel(parsed){
     const quarterExpense = parsed.quarter.dataRows.find(r => r.rowType === 'expense');
     const yearExpense = parsed.year.dataRows.find(r => r.rowType === 'expense');
@@ -417,6 +446,7 @@
       },
       hc,
       te,
+      opex: parsed.opex || null,
       actions
     };
   }
@@ -1079,6 +1109,18 @@
       target.style.width = prevWidth;
       if(nav) nav.classList.remove('disabled-nav');
     }
+  }
+
+  function openBudgetUtilization(){
+    if(!state.model || !state.model.opex){ toast('Upload the OPEX Feed to view Budget Utilization'); return; }
+    const payload = {
+      meta: state.model.meta,
+      opex: state.model.opex,
+      savedAt: Date.now()
+    };
+    try{ localStorage.setItem('bva:budget-utilization', JSON.stringify(payload)); }
+    catch(e){ console.warn(e); }
+    window.open('./budget-utilization/index.html', 'BudgetUtilization', 'width=1200,height=800,scrollbars=yes,resizable=yes');
   }
 
   function navTo(sectionId, el){
