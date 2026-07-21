@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Budget Utilization</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/dist/tabler-icons.min.css">
+
+<link rel="stylesheet" href="./budget.css">
+</head>
+<body>
+<div class="main-workspace">
+
+  <!-- Empty state -->
+  <section class="sec bu-empty-sec" id="buEmpty" style="display:none;">
+    <i class="ti ti-file-off" aria-hidden="true"></i>
+    <p>Upload the OPEX Feed and reopen Budget Utilization</p>
+  </section>
+
+  <!-- App -->
+  <section class="sec" id="buApp" style="display:none;">
+
+    <div class="sec-hdr">
+      <div class="sec-hdr-left">
+        <span class="sec-ic"><i class="ti ti-gauge"></i></span>
+        <span class="sec-title">Expense Budget Utilization</span>
+      </div>
+      <span class="sec-tag" id="buSource"></span>
+    </div>
+
+    <div class="bu-top-row">
+      <div class="bu-top-row-left">
+        <span class="badge b-plan" id="buTag">--</span>
+        <button class="btn secondary" id="toggleBtn" type="button">View all categories</button>
+      </div>
+      <div class="bu-as-of-badge" id="asOfBadge">
+        <span id="asOfMonth"></span>
+        <span class="bu-divider"></span>
+        <span id="asOfFcst"></span>
+      </div>
+    </div>
+
+    <div class="sublbl">Legend</div>
+    <div class="bu-legend">
+      <span><i class="bu-dot bu-dot-blue"></i>On track</span>
+      <span><i class="bu-dot bu-dot-purple"></i>Ahead of pace</span>
+      <span><i class="bu-dot bu-dot-red"></i>Over budget</span>
+      <span><i class="bu-dot bu-dot-green"></i>Net credit</span>
+      <span><i class="bu-dot bu-dot-band"></i>Expected pace</span>
+    </div>
+
+    <div id="singleView">
+      <div class="sublbl">Selection</div>
+      <div class="bu-dropdown-row">
+        <div class="bu-dropdown-wrap">
+          <label for="catSelect">Category (L2)</label>
+          <select id="catSelect"></select>
+        </div>
+        <div class="bu-dropdown-wrap bu-period">
+          <label for="periodSelect">Period</label>
+          <select id="periodSelect"></select>
+        </div>
+      </div>
+
+      <div class="sublbl">Utilization</div>
+      <div class="bu-gauge-row">
+        <div class="bu-gauge-box">
+          <div class="bu-track-wrap bu-track-wrap-gauge">
+            <div class="bu-track bu-track-gauge" id="gaugeTrack"></div>
+            <div class="bu-track-sub bu-sub-gauge" id="gaugeSub"></div>
+          </div>
+        </div>
+        <div class="bu-gauge-comment-wrap">
+          <input type="text" class="bu-input" id="singleComment" placeholder="Add a note...">
+        </div>
+      </div>
+
+      <table class="bu-table">
+        <thead>
+          <tr><th>Expense budget</th><th>Actual expense</th><th>Cost savings</th></tr>
+        </thead>
+        <tbody>
+          <tr><td id="cellBudget"></td><td id="cellActual"></td><td id="cellSavings"></td></tr>
+        </tbody>
+      </table>
+
+      <div class="bu-note" id="footnote"></div>
+
+      <button class="btn secondary bu-sm" id="vendorToggleBtn" type="button" style="display:none;">Show vendor detail</button>
+      <div id="singleVendorRows" style="display:none; margin-top: 10px;"></div>
+    </div>
+
+    <div id="allView" style="display:none;">
+      <div class="sublbl">Period</div>
+      <div class="bu-all-period-wrap">
+        <select id="periodSelectAll"></select>
+      </div>
+      <div id="allRows"></div>
+    </div>
+
+  </section>
+</div>
+
+<script src="./budget.js"></script>
+</body>
+</html>
