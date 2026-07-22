@@ -17,7 +17,6 @@ html{scroll-behavior:smooth}
 body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(180deg,#eef2fb 0%,#f7f9fd 260px,#f7f9fd 100%);color:var(--ink);font-size:13px;min-height:100vh;-webkit-font-smoothing:antialiased;padding:28px 30px}
 .main-workspace{max-width:1080px;margin:0 auto}
 
-/* ---------- Section shell (board look) ---------- */
 .sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:26px;margin-bottom:26px}
 .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap}
 .sec-hdr-left{display:flex;align-items:center;gap:12px}
@@ -27,7 +26,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans
 .sec-tag{font-size:11px;color:var(--muted);background:#f1f5f9;padding:5px 12px;border-radius:999px;font-weight:600}
 .sublbl{font-size:.75rem;font-weight:800;letter-spacing:.08em;color:var(--muted2);text-transform:uppercase;margin:22px 0 12px}
 
-/* ---------- Buttons (board) ---------- */
 .btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;transition:transform .15s,background .12s,border-color .12s;white-space:nowrap}
 .btn.primary{background:linear-gradient(90deg,#4f46e5,#6366f1);color:#fff;box-shadow:0 4px 14px rgba(79,70,229,.35)}
 .btn.primary:hover{transform:translateY(-1px)}
@@ -35,24 +33,20 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans
 .btn.secondary:hover{border-color:var(--brand);color:var(--brand)}
 .btn.bu-sm{padding:7px 12px;font-size:11.5px;margin-top:12px}
 
-/* ---------- Badges (pill) ---------- */
 .badge{display:inline-flex;align-items:center;font-size:11px;font-weight:800;border-radius:999px;padding:5px 11px;letter-spacing:.02em}
 .b-fav{color:var(--fav);background:var(--fav-bg)}
 .b-unfav{color:var(--unfav);background:var(--unfav-bg)}
 .b-plan{color:var(--plan);background:var(--plan-bg)}
 
-/* ---------- Empty state ---------- */
 .bu-empty-sec{flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:60px 24px;color:var(--muted)}
 .bu-empty-sec i{font-size:34px;color:var(--muted2)}
 .bu-empty-sec p{font-size:15px;font-weight:600}
 
-/* ---------- Top row ---------- */
 .bu-top-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap}
 .bu-top-row-left{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .bu-as-of-badge{background:var(--plan-bg);color:var(--brand2);border-radius:999px;padding:6px 13px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:8px;white-space:nowrap}
 .bu-divider{width:1px;height:12px;background:var(--brand2);opacity:.35}
 
-/* ---------- Legend (board chart-legend look) ---------- */
 .bu-legend{display:flex;gap:16px;align-items:center;flex-wrap:wrap;background:var(--bg2);padding:8px 14px;border-radius:10px;width:fit-content;border:1px solid var(--line);font-size:11.5px;color:#475569;font-weight:600}
 .bu-legend span{display:inline-flex;align-items:center;gap:6px}
 .bu-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
@@ -62,7 +56,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans
 .bu-dot-green{background:var(--fav)}
 .bu-dot-band{background:rgba(15,23,42,.16)}
 
-/* ---------- Dropdowns / inputs ---------- */
 .bu-dropdown-row{display:flex;gap:14px;margin-bottom:6px;flex-wrap:wrap}
 .bu-dropdown-wrap{flex:1 1 200px}
 .bu-dropdown-wrap.bu-period{flex:0 1 170px}
@@ -73,7 +66,6 @@ select{cursor:pointer}
 .bu-input:focus,select:focus{outline:2px solid #c7d2fe;border-color:transparent;background:#fff}
 .bu-input.bu-sm{font-size:11px;padding:6px 9px;height:30px}
 
-/* ---------- Bar segment system (gauge / category / vendor) ---------- */
 .bu-track-wrap{display:flex;flex-direction:column;gap:4px}
 .bu-track-wrap-gauge{flex:1 1 0}
 .bu-track-wrap-cat{flex:1 1 0;min-width:90px}
@@ -95,12 +87,10 @@ select{cursor:pointer}
 .bu-sub-cat{font-size:9.5px}
 .bu-sub-vendor{font-size:8.5px}
 
-/* ---------- Single gauge row ---------- */
 .bu-gauge-row{display:flex;gap:14px;align-items:stretch;margin-bottom:14px;flex-wrap:wrap}
 .bu-gauge-box{flex:3 1 260px;min-width:220px;border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;background:var(--surface);box-shadow:var(--shadow-sm)}
 .bu-gauge-comment-wrap{flex:2 1 220px;min-width:200px;display:flex;align-items:center}
 
-/* ---------- Table (board table look) ---------- */
 .bu-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-sm);margin-top:4px}
 .bu-table th,.bu-table td{border-bottom:1px solid #f1f5f9;padding:11px 13px;text-align:center;font-size:13px}
 .bu-table th{background:#e0e7ff;color:#312e81;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid var(--line)}
@@ -110,7 +100,6 @@ select{cursor:pointer}
 .bu-table td.bu-positive{color:var(--fav)}
 .bu-note{font-size:11.5px;color:var(--muted2);text-align:center;margin-top:14px;line-height:1.5}
 
-/* ---------- Category rows (view all) ---------- */
 .bu-cat-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f1f5f9}
 .bu-cat-row.bu-total{border-top:2px solid var(--line);border-bottom:none;margin-top:6px;padding-top:16px}
 .bu-cat-name{width:180px;flex-shrink:0;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -122,7 +111,6 @@ select{cursor:pointer}
 .bu-expand-btn:hover{border-color:var(--brand);color:var(--brand)}
 .bu-expand-spacer{width:26px;flex-shrink:0}
 
-/* ---------- Vendor rows ---------- */
 .bu-vendor-wrap{padding-left:36px;padding-bottom:8px}
 .bu-vendor-row{display:flex;align-items:center;gap:8px;padding:4px 0}
 .bu-vendor-name{width:150px;flex-shrink:0;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -130,7 +118,9 @@ select{cursor:pointer}
 .bu-vendor-comment{flex:1 1 110px;min-width:110px}
 .bu-vendor-search-wrap{margin-bottom:8px}
 
-/* ---------- Responsive ---------- */
+.bu-toast{position:fixed;right:24px;bottom:24px;background:#0f172a;color:#fff;padding:11px 15px;border-radius:12px;font-size:12px;opacity:0;transform:translateY(10px);pointer-events:none;transition:.2s;z-index:500;box-shadow:0 6px 24px rgba(15,23,42,.18)}
+.bu-toast.show{opacity:1;transform:translateY(0)}
+
 @media (max-width:680px){
   body{padding:18px 14px}
   .sec{padding:18px 16px 20px;border-radius:14px}
