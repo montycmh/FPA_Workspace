@@ -431,10 +431,54 @@
       comments = JSON.parse(localStorage.getItem(commentsKey) || "{}");
     } catch (e) { comments = {}; }
 
+    var toastTimer = null;
+
+    function persistComments() {
+      try {
+        localStorage.setItem(commentsKey, JSON.stringify(comments));
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function showToast(msg) {
+      var toast = document.getElementById("saveToast");
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.classList.add("show");
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () {
+        toast.classList.remove("show");
+      }, 1800);
+    }
+
     function getComment(key) { return comments[key] || ""; }
+
     function setComment(key, val) {
-      if (val) comments[key] = val; else delete comments[key];
-      try { localStorage.setItem(commentsKey, JSON.stringify(comments)); } catch (e) {}
+      if (val) comments[key] = val;
+      else delete comments[key];
+      persistComments();
+    }
+
+    function saveComments() {
+      if (persistComments()) showToast("Comments saved");
+      else showToast("Could not save comments");
+    }
+
+    function backToBoard() {
+      saveComments();
+      try {
+        if (window.opener && !window.opener.closed) {
+          window.opener.focus();
+          window.close();
+          setTimeout(function () {
+            if (!window.closed) window.location.href = "../index.html";
+          }, 80);
+          return;
+        }
+      } catch (e) {}
+      window.location.href = "../index.html";
     }
 
     function getCatData(name, period) {
@@ -451,6 +495,8 @@
     var vendorToggleBtn = document.getElementById("vendorToggleBtn");
     var singleVendorRows = document.getElementById("singleVendorRows");
     var singleComment = document.getElementById("singleComment");
+    var saveBtn = document.getElementById("saveBtn");
+    var backBtn = document.getElementById("backBtn");
 
     [GRAND_TOTAL_LABEL].concat(categoryKeys).forEach(function (name) {
       var opt = document.createElement("option");
@@ -705,6 +751,8 @@
     catSelect.addEventListener("change", render);
     periodSelect.addEventListener("change", render);
     periodSelectAll.addEventListener("change", renderAll);
+    if (saveBtn) saveBtn.addEventListener("click", saveComments);
+    if (backBtn) backBtn.addEventListener("click", backToBoard);
 
     render();
   }
