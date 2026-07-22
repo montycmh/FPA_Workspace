@@ -1,7 +1,8 @@
 /* ============================================================
-   Budget Utilization — styled to mirror the main BvA Board.
-   Includes left blue rail, circular back button, floppy save icon,
-   and the same visual palette/tokens used by the parent dashboard.
+   Budget Utilization — themed to match the parent BvA dashboard.
+   Reuses the board's design tokens, section shell, headers,
+   sublbl labels, buttons, badges, tables and inputs, then skins
+   the bu-* component system on top of the same palette.
    ============================================================ */
 :root{
   --bg:#eef2fb;--bg2:#f7f9fd;--surface:#ffffff;
@@ -14,16 +15,8 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(180deg,#eef2fb 0%,#f7f9fd 260px,#f7f9fd 100%);color:var(--ink);font-size:13px;min-height:100vh;-webkit-font-smoothing:antialiased;padding:28px 30px}
+.main-workspace{max-width:1080px;margin:0 auto}
 
-.bu-shell{display:flex;gap:22px;align-items:stretch;max-width:1280px;margin:0 auto}
-.bu-side-rail{width:96px;flex-shrink:0;border-radius:22px;background:linear-gradient(185deg,#1e2450 0%,#141a3a 60%,#10152e 100%);box-shadow:2px 0 24px rgba(15,23,42,.12);padding:20px 14px;display:flex;flex-direction:column;justify-content:space-between;min-height:calc(100vh - 56px);position:sticky;top:28px}
-.bu-side-rail-top{display:flex;flex-direction:column;align-items:center;gap:16px}
-.bu-side-badge{width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:#8b93f7;font-size:22px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
-.bu-side-line{width:32px;height:6px;border-radius:999px;background:rgba(255,255,255,.12)}
-.bu-side-line.active{background:linear-gradient(90deg,#4f46e5,#6366f1);box-shadow:0 4px 14px rgba(79,70,229,.4)}
-.bu-side-caption{font-size:.72rem;line-height:1.45;color:#8b93c7;text-align:center;font-weight:700;letter-spacing:.04em}
-
-.main-workspace{flex:1;max-width:1120px}
 .sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:26px;margin-bottom:26px}
 .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap}
 .sec-hdr-left{display:flex;align-items:center;gap:12px}
@@ -33,18 +26,12 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans
 .sec-tag{font-size:11px;color:var(--muted);background:#f1f5f9;padding:5px 12px;border-radius:999px;font-weight:600}
 .sublbl{font-size:.75rem;font-weight:800;letter-spacing:.08em;color:var(--muted2);text-transform:uppercase;margin:22px 0 12px}
 
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;transition:transform .15s,background .12s,border-color .12s;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;transition:transform .15s,background .12s,border-color .12s;white-space:nowrap}
 .btn.primary{background:linear-gradient(90deg,#4f46e5,#6366f1);color:#fff;box-shadow:0 4px 14px rgba(79,70,229,.35)}
 .btn.primary:hover{transform:translateY(-1px)}
 .btn.secondary{background:var(--surface);color:var(--ink);border:1px solid #cbd5e1}
 .btn.secondary:hover{border-color:var(--brand);color:var(--brand)}
 .btn.bu-sm{padding:7px 12px;font-size:11.5px;margin-top:12px}
-.btn-icon-only{width:40px;height:40px;padding:0;border-radius:12px}
-.btn-icon-only i{font-size:16px;line-height:1}
-
-.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;flex-shrink:0;border:none;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;font-size:16px;cursor:pointer;transition:.15s;box-shadow:0 4px 12px rgba(79,70,229,.3);text-decoration:none}
-.icon-btn:hover{transform:translateY(-1px);color:#fff}
-.icon-btn i{font-size:16px;line-height:1}
 
 .badge{display:inline-flex;align-items:center;font-size:11px;font-weight:800;border-radius:999px;padding:5px 11px;letter-spacing:.02em}
 .b-fav{color:var(--fav);background:var(--fav-bg)}
@@ -134,18 +121,8 @@ select{cursor:pointer}
 .bu-toast{position:fixed;right:24px;bottom:24px;background:#0f172a;color:#fff;padding:11px 15px;border-radius:12px;font-size:12px;opacity:0;transform:translateY(10px);pointer-events:none;transition:.2s;z-index:500;box-shadow:0 6px 24px rgba(15,23,42,.18)}
 .bu-toast.show{opacity:1;transform:translateY(0)}
 
-@media (max-width:980px){
-  .bu-shell{gap:16px}
-  .bu-side-rail{width:78px;padding:16px 10px}
-  .bu-side-caption{font-size:.68rem}
-}
-@media (max-width:780px){
-  body{padding:18px 14px}
-  .bu-shell{display:block}
-  .bu-side-rail{display:none}
-  .main-workspace{max-width:none}
-}
 @media (max-width:680px){
+  body{padding:18px 14px}
   .sec{padding:18px 16px 20px;border-radius:14px}
   .bu-gauge-row{flex-direction:column}
   .bu-gauge-box,.bu-gauge-comment-wrap{flex:1 1 auto;width:100%}
@@ -159,6 +136,5 @@ select{cursor:pointer}
 @media (max-width:420px){
   .bu-legend{gap:10px}
   .bu-top-row{flex-direction:column;align-items:stretch}
-  .bu-top-row-left{justify-content:flex-start}
   .bu-as-of-badge{justify-content:center}
 }
