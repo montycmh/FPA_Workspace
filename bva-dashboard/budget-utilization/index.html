@@ -15,13 +15,11 @@
 <body>
 <div class="main-workspace">
 
-  <!-- Empty state -->
   <section class="sec bu-empty-sec" id="buEmpty" style="display:none;">
     <i class="ti ti-file-off" aria-hidden="true"></i>
     <p>Upload the OPEX Feed and reopen Budget Utilization</p>
   </section>
 
-  <!-- App -->
   <section class="sec" id="buApp" style="display:none;">
 
     <div class="sec-hdr">
@@ -35,6 +33,14 @@
     <div class="bu-top-row">
       <div class="bu-top-row-left">
         <span class="badge b-plan" id="buTag">--</span>
+        <button class="btn secondary" id="backBtn" type="button">
+          <i class="ti ti-arrow-left"></i>
+          Back to BvA Board
+        </button>
+        <button class="btn primary" id="saveBtn" type="button">
+          <i class="ti ti-device-floppy"></i>
+          Save
+        </button>
         <button class="btn secondary" id="toggleBtn" type="button">View all categories</button>
       </div>
       <div class="bu-as-of-badge" id="asOfBadge">
@@ -104,6 +110,8 @@
 
   </section>
 </div>
+
+<div class="bu-toast" id="saveToast" aria-live="polite"></div>
 
 <script src="./budget.js"></script>
 </body>
