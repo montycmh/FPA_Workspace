@@ -1,3 +1,11 @@
+
+tools.json
+
+Page
+1
+/
+1
+100%
 [
   {
     "id": "aghr",
@@ -58,5 +66,16 @@
     "status": "live",
     "summary": "Generate mapped SBC cost-center feeds, validate totals, upload mapping files, and export quarter or consolidated CSVs.",
     "tags": ["SBC", "Forecast", "CSV Export"]
+  },
+  {
+    "id": "pocontrol",
+    "name": "PO Control",
+    "icon": "ti-receipt-2",
+    "path": "./po-control/",
+    "legacyPath": null,
+    "status": "live",
+    "summary": "Track Plan vs Actual vs open POs by vendor and L2, with fiscal-year filters, Projects, and in-browser upload for Plan/Actual and Zip POs feeds.",
+    "tags": ["POs", "Budget vs Actual", "HTML Report"]
   }
 ]
+Displaying tools.json.
