@@ -630,7 +630,8 @@ function vendorMap(){
   l2Data.forEach(l2 => l2.vendors.forEach(v => m[v.key] = {...v, l2: l2.name}));
   return m;
 }
-const VMAP = vendorMap();
+// (no module-level cache here on purpose -- l2Data can be replaced wholesale
+// on a Plan/Actual upload, so every consumer calls vendorMap() fresh)
 
 function computeOpenPO(){
   // returns {key: {openPo, poCount, bills, fxPending:[{currency,amount}]}}
@@ -673,7 +674,8 @@ function computeProjectTotals(){
   // {projectId: {actual, po, poCount, fxPending}}
   const out = {};
   const yr = currentYear();
-  projects.forEach(p => out[p.id] = {actual:0, po:0, poCount:0, fxPending:[]});
+  const vmap = vendorMap();
+  projects.forEach(p => out[p.id] = {actual:0, po:0, poCount:0, fxPending:[], vendorKeys:new Set()});
   allPos().forEach(po => {
     if(po.fiscalYear !== yr) return;
     const pid = currentProject(po);
@@ -682,8 +684,25 @@ function computeProjectTotals(){
       out[pid].fxPending.push({currency: po.currency, amount: po.amount});
       return;
     }
-    if(po.type === 'Bill') out[pid].actual += po.amount;
-    else { out[pid].po += po.amount; out[pid].poCount += 1; }
+    if(po.type !== 'Bill'){ out[pid].po += po.amount; out[pid].poCount += 1; } // Request or Change Order
+    const key = currentMatchKey(po);
+    if(key) out[pid].vendorKeys.add(key);
+  });
+  // Actual = sum of each distinct vendor's Actual (from the Plan/Actual file)
+  // across every vendor matched to at least one PO assigned to this project --
+  // same source used everywhere else in this dashboard. Bill amounts are NOT
+  // summed directly here (same reasoning as the vendor/L2 bars: a Bill is
+  // assumed to already be reflected in that vendor's Actual via the GL, so
+  // adding it again would double-count).
+  // Caveat: if two different projects both include a PO matched to the same
+  // vendor, each project will show that vendor's FULL Actual -- it isn't
+  // split proportionally between projects.
+  Object.keys(out).forEach(pid => {
+    out[pid].vendorKeys.forEach(key => {
+      const v = vmap[key];
+      if(v) out[pid].actual += v.actual;
+    });
+    delete out[pid].vendorKeys;
   });
   return out;
 }
