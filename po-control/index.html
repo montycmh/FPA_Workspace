@@ -119,7 +119,7 @@ select:focus{outline:2px solid var(--blue-md)}
 .proj-body{padding:2px 0 12px 40px;display:none}
 .proj-item.expanded .proj-body{display:block}
 .proj-item.expanded .chev{transform:rotate(90deg)}
-.po-mini-row{display:grid;grid-template-columns:90px 90px 90px 1fr 120px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--gray-lt);font-size:11.5px}
+.po-mini-row{display:grid;grid-template-columns:90px 46px 90px 90px 1fr 120px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--gray-lt);font-size:11.5px}
 .po-mini-row:last-child{border-bottom:none}
 .po-mini-date{color:var(--t3);font-family:'DM Mono',monospace;font-size:10.5px}
 .po-mini-num{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--t2)}
@@ -157,6 +157,7 @@ table.po-table tr:hover{background:#FBFAF7}
 .conf-no_budget_data{background:var(--gray-lt);color:var(--t3)}
 .row-select{font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid var(--border-md);background:#fff;max-width:190px;font-family:'DM Sans',sans-serif}
 .type-tag{font-size:10px;padding:2px 7px;border-radius:5px;background:var(--gray-lt);color:var(--t2)}
+.q-tag{font-size:9.5px;font-weight:600;padding:2px 6px;border-radius:5px;background:var(--blue-lt);color:var(--blue);font-family:'DM Mono',monospace;white-space:nowrap}
 .currency-tag{font-size:9.5px;color:var(--amber);font-weight:600}
 .manual-tag{font-size:9px;font-weight:600;color:var(--blue);background:var(--blue-lt);padding:1px 6px;border-radius:20px;margin-left:5px;vertical-align:middle}
 tr.manual-row{background:#FCFDFF}
@@ -280,7 +281,7 @@ footer{margin-top:30px;padding-top:16px;border-top:1px solid var(--border);font-
   <table class="po-table">
     <thead>
       <tr>
-        <th>PO/Bill</th><th>Type</th><th>Detail</th><th>Date</th><th>Amount</th>
+        <th>PO/Bill</th><th>Type</th><th>Detail</th><th>Date</th><th>Quarter</th><th>Amount</th>
         <th>Department</th><th>Assigned vendor</th><th>Project</th><th>Match</th><th></th>
       </tr>
     </thead>
@@ -611,6 +612,17 @@ function computeFiscalYear(dateStr){
   return 'FY' + String(fy % 100).padStart(2, '0');
 }
 
+// Fiscal quarter within the Feb->Jan fiscal year: Q1 Feb-Apr, Q2 May-Jul,
+// Q3 Aug-Oct, Q4 Nov-Jan.
+function computeFiscalQuarter(dateStr){
+  if(!dateStr) return null;
+  const d = new Date(dateStr + 'T00:00:00');
+  if(isNaN(d.getTime())) return null;
+  const month = d.getMonth(); // 0 = Jan
+  const fiscalMonthIdx = (month + 11) % 12; // Feb=0 ... Jan=11
+  return 'Q' + (Math.floor(fiscalMonthIdx / 3) + 1);
+}
+
 function currentMatchKey(po){
   return overrides[po.id]?.matchKey !== undefined ? overrides[po.id].matchKey : po.matchKey;
 }
@@ -771,6 +783,7 @@ function renderProjects(){
         : poList.map(po => `
             <div class="po-mini-row">
               <span class="po-mini-date">${po.date}</span>
+              <span class="q-tag">${computeFiscalQuarter(po.date) || '—'}</span>
               <span class="po-mini-num">${po.po}</span>
               <span class="type-tag">${po.type}</span>
               <span class="po-mini-detail" title="${po.detail||''}">${po.detail||'—'}</span>
@@ -996,6 +1009,7 @@ function renderPOTable(){
         <td><span class="type-tag">${po.type}</span></td>
         <td class="po-detail" title="${po.detail||''}">${po.detail||'—'}</td>
         <td class="mono" style="font-size:11px;color:var(--t2)">${po.date}</td>
+        <td><span class="q-tag">${computeFiscalQuarter(po.date) || '—'}</span></td>
         <td class="po-amount">${fmt(po.amount)} ${currencyTag}</td>
         <td>
           <select class="row-select" onchange="setDept('${po.id}', this.value)">
@@ -1017,7 +1031,7 @@ function renderPOTable(){
         <td>${deleteCell}</td>
       </tr>`;
   });
-  tbody.innerHTML = html || `<tr><td colspan="10" style="text-align:center;color:var(--t3);padding:24px">No results</td></tr>`;
+  tbody.innerHTML = html || `<tr><td colspan="11" style="text-align:center;color:var(--t3);padding:24px">No results</td></tr>`;
 }
 
 function setVendor(poId, val){
