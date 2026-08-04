@@ -212,36 +212,25 @@ footer{margin-top:30px;padding-top:16px;border-top:1px solid var(--border);font-
   <div class="sec-head">
     <div class="sec-head-row">
       <span class="sec-title">Data sources — <span id="dsDeptLabel"></span></span>
-      <span class="sec-note">3 feeds: Plan (upload once, frozen) · Actual (re-upload monthly to refresh) · Zip POs report (company-wide, upload as many times as you receive them — they accumulate, not replace)</span>
+      <span class="sec-note">2 feeds: Plan + Actual (one workbook with both columns, for the business unit selected above) · Zip POs report (company-wide, upload as many times as you receive them — they accumulate, not replace)</span>
     </div>
     <div class="sec-rule"></div>
   </div>
   <div class="ds-card">
     <div class="ds-row">
       <div class="ds-info">
-        <p class="ds-label">1. Plan — for the business unit selected above, upload once</p>
-        <p class="ds-sub" id="planStatus">Loading…</p>
+        <p class="ds-label">1. Plan + Actual — one workbook (both Plan and Actual columns), for the business unit selected above</p>
+        <p class="ds-sub" id="paStatus">Loading…</p>
       </div>
       <div class="ds-controls">
         <label class="btn-secondary ds-upload-btn">Upload .xlsx
-          <input type="file" id="planFileInput" accept=".xlsx,.xls" style="display:none">
+          <input type="file" id="planActualFileInput" accept=".xlsx,.xls" style="display:none">
         </label>
       </div>
     </div>
     <div class="ds-row">
       <div class="ds-info">
-        <p class="ds-label">2. Actual — for the business unit selected above, re-upload monthly</p>
-        <p class="ds-sub" id="actualStatus">Loading…</p>
-      </div>
-      <div class="ds-controls">
-        <label class="btn-secondary ds-upload-btn">Upload .xlsx
-          <input type="file" id="actualFileInput" accept=".xlsx,.xls" style="display:none">
-        </label>
-      </div>
-    </div>
-    <div class="ds-row">
-      <div class="ds-info">
-        <p class="ds-label">3. Zip POs report — company-wide, upload anytime (adds to what's on file, doesn't replace)</p>
+        <p class="ds-label">2. Zip POs report — company-wide, upload anytime (adds to what's on file, doesn't replace)</p>
         <p class="ds-sub" id="posStatus">Loading…</p>
       </div>
       <div class="ds-controls">
@@ -615,25 +604,15 @@ function updatePaStatus(){
   const dept = activeDept();
   if(label) label.textContent = dept;
   const budget = budgetsByDept[dept];
-
-  const planEl = document.getElementById('planStatus');
-  if(planEl){
-    if(!budget){
-      planEl.textContent = `No Plan loaded yet for "${dept}" — upload one to set its budget.`;
-    } else {
-      const totalPlan = budget.l2Data.reduce((s,sec)=>s+sec.plan,0);
-      const vendorCount = budget.l2Data.reduce((s,sec)=>s+sec.vendors.length,0);
-      planEl.textContent = `${dept} · ${budget.budgetFY} · Plan ${fmtK(totalPlan)} · ${vendorCount} vendors across ${budget.l2Data.length} L2 categories`;
-    }
-  }
-  const actualEl = document.getElementById('actualStatus');
-  if(actualEl){
-    if(!budget){
-      actualEl.textContent = `Upload a Plan first — Actual is overlaid onto the vendor structure the Plan defines.`;
-    } else {
-      const totalActual = budget.l2Data.reduce((s,sec)=>s+sec.actual,0);
-      actualEl.textContent = `${dept} · Actual on file: ${fmtK(totalActual)}${budget.actualUpdatedAt ? ' · last updated ' + budget.actualUpdatedAt : ' · not yet uploaded this cycle'}`;
-    }
+  const el = document.getElementById('paStatus');
+  if(!el) return;
+  if(!budget){
+    el.textContent = `No Plan + Actual loaded yet for "${dept}" — upload its workbook to set the budget.`;
+  } else {
+    const totalPlan = budget.l2Data.reduce((s,sec)=>s+sec.plan,0);
+    const totalActual = budget.l2Data.reduce((s,sec)=>s+sec.actual,0);
+    const vendorCount = budget.l2Data.reduce((s,sec)=>s+sec.vendors.length,0);
+    el.textContent = `${dept} · ${budget.budgetFY} · Plan ${fmtK(totalPlan)} · Actual ${fmtK(totalActual)} · ${vendorCount} vendors across ${budget.l2Data.length} L2 categories${budget.actualUpdatedAt ? ' · updated ' + budget.actualUpdatedAt : ''}`;
   }
 }
 
@@ -754,8 +733,8 @@ function rematchAllPos(){
   });
 }
 
-async function handlePlanFile(file){
-  setDsMsg('Reading Plan file…', false);
+async function handlePlanActualFile(file){
+  setDsMsg('Reading Plan + Actual file…', false);
   try{
     const buf = await readFileAsArrayBuffer(file);
     const wb = XLSX.read(buf, {type:'array', cellDates:true});
@@ -765,44 +744,19 @@ async function handlePlanFile(file){
       return;
     }
     const dept = activeDept();
+    if(!dept){ setDsMsg('Add or select a business unit first, then upload its Plan + Actual workbook.', true); return; }
     registerDepartment(dept);
-    budgetsByDept[dept] = applyPlanUpload(budgetsByDept[dept], result);
+    // Plan and Actual come from the SAME workbook (both columns), so the vendor
+    // structure and the vendor->PO match are built in one pass -- no risk of the
+    // match breaking from a separate Actual overlay rebuilding the vendor list.
+    budgetsByDept[dept] = { l2Data: result.l2, budgetFY: result.budgetFY, actualUpdatedAt: todayStr() };
     rematchAllPos();
     saveState();
     refreshFilterOptions();
     updatePaStatus();
     updatePosStatus();
     renderAll();
-    setDsMsg(`Loaded Plan for ${dept} (${budgetsByDept[dept].budgetFY}). ${result.l2.length} L2 categories.`, false);
-  } catch(e){
-    console.error(e);
-    setDsMsg('Could not read that file — make sure it is a valid .xlsx export.', true);
-  }
-}
-
-async function handleActualFile(file){
-  setDsMsg('Reading Actual file…', false);
-  try{
-    const buf = await readFileAsArrayBuffer(file);
-    const wb = XLSX.read(buf, {type:'array', cellDates:true});
-    const result = parsePlanActualWorkbook(wb);
-    if(!result.l2.length){
-      setDsMsg('Could not find any L2/vendor rows in that file — check it matches the expected layout (Total <L2> rows followed by "<id> - <vendor>" rows).', true);
-      return;
-    }
-    const dept = activeDept();
-    registerDepartment(dept);
-    const hadPlan = !!(budgetsByDept[dept] && budgetsByDept[dept].l2Data.length);
-    budgetsByDept[dept] = applyActualUpload(budgetsByDept[dept], result);
-    rematchAllPos();
-    saveState();
-    refreshFilterOptions();
-    updatePaStatus();
-    updatePosStatus();
-    renderAll();
-    setDsMsg(hadPlan
-      ? `Updated Actual for ${dept}. Plan $ left untouched.`
-      : `Loaded Actual for ${dept} — no Plan was on file yet, so Plan $ shows as 0 until you upload one.`, !hadPlan);
+    setDsMsg(`Loaded Plan + Actual for ${dept} (${result.budgetFY}). ${result.l2.length} L2 categories.`, false);
   } catch(e){
     console.error(e);
     setDsMsg('Could not read that file — make sure it is a valid .xlsx export.', true);
@@ -1955,14 +1909,9 @@ document.getElementById('genDate').textContent = 'Generated ' + new Date().toLoc
 // ---- Data sources panel wiring ----
 updatePaStatus();
 updatePosStatus();
-document.getElementById('planFileInput').addEventListener('change', (e)=>{
+document.getElementById('planActualFileInput').addEventListener('change', (e)=>{
   const file = e.target.files[0];
-  if(file) handlePlanFile(file);
-  e.target.value = '';
-});
-document.getElementById('actualFileInput').addEventListener('change', (e)=>{
-  const file = e.target.files[0];
-  if(file) handleActualFile(file);
+  if(file) handlePlanActualFile(file);
   e.target.value = '';
 });
 document.getElementById('posFileInput').addEventListener('change', (e)=>{
