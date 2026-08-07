@@ -18,7 +18,6 @@
   --radius-xl: 22px;
   --radius-lg: 18px;
   --radius-md: 14px;
-
   /* --- Added: Emil-style motion + refinements --- */
   --border-strong: #C9CFDA;
   --card-border: rgba(30,39,97,.10);
@@ -29,6 +28,183 @@
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-soft: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* ==========================================================================
+   DARK "FLOATING MODULES" THEME — scoped override, NOT a change to :root.
+   Why scoped: the block above is flagged "safe for other modules", implying
+   other pages/components may rely on those exact values. Rather than
+   mutating them globally, we re-declare the same custom properties inside
+   :root:has(.workspace-shell) — CSS gives inner declarations higher
+   specificity, so any page that renders .workspace-shell automatically
+   picks up the dark palette via the cascade, while every other page keeps
+   the original light tokens untouched.
+   NOTE: :has() needs a fairly modern browser (Chrome/Edge 105+, Safari
+   15.4+, Firefox 121+, ~2023-2024). If you need to support older browsers,
+   swap this selector for an explicit class on <html>/<body> instead
+   (e.g. <body class="theme-dark">) and I can wire that up instead.
+   ========================================================================== */
+:root:has(.workspace-shell) {
+  --bg: #10141C;
+  --surface: #1B2130;
+  --surface-soft: #242C3D;
+  --border: #2E3648;
+  --text: #F3F6FC;
+  --muted: #A6AFC0;
+  --subtle: #757E90;
+  --navy: #4C6EF5;
+  --navy-2: #6C8CFF;
+  --mint: #7CF0C9;
+  --green: #34D399;
+  --green-2: #6EE7B7;
+  --yellow: #FBBF24;
+  --blue-soft: #1B2A44;
+  --shadow: 0 18px 45px rgba(0,0,0,.45);
+  --border-strong: #3A4358;
+  --card-border: rgba(255,255,255,.08);
+  --focus: rgba(124,240,201,.35);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.35), 0 4px 14px rgba(0,0,0,.32);
+  --shadow-md: 0 3px 6px rgba(0,0,0,.40), 0 16px 34px rgba(0,0,0,.38);
+  --shadow-lg: 0 6px 14px rgba(0,0,0,.45), 0 26px 54px rgba(0,0,0,.50);
+  /* New accent tokens (dark theme only) — not part of the original base set,
+     added purely so each card can get its own corner-glow color, like the
+     "My Projects" reference. Nothing existing was renamed or removed. */
+  --coral: #FB7185;
+  --violet: #A78BFA;
+}
+/* body's background gradient uses hardcoded rgba stops (not vars), so it
+   needs its own dark-mode declaration to stay in sync with --bg above. */
+:root:has(.workspace-shell) body {
+  background:
+    radial-gradient(circle at 0% -5%, rgba(124,240,201,.12), transparent 32%),
+    radial-gradient(circle at 100% 0%, rgba(76,110,245,.16), transparent 30%),
+    var(--bg);
+}
+/* status pill backgrounds are also hardcoded rgba, bump for dark contrast */
+:root:has(.workspace-shell) .workspace-status {
+  background: rgba(52,211,153,.16);
+}
+:root:has(.workspace-shell) .workspace-status.migrating {
+  background: rgba(251,191,36,.18);
+  color: #FDE68A;
+}
+/* Hero, dark mode only: swap the flat navy panel for a frosted-glass card
+   sitting over a soft blurred glow built from the accent palette (mint →
+   green → yellow) instead of blue — closer to the reference screenshot's
+   translucent header tile. Kept out of the base .workspace-hero rule so
+   the light theme keeps its original flat navy gradient untouched.
+   backdrop-filter has solid support today (Chrome/Edge/Firefox 103+,
+   Safari with the -webkit- prefix below); browsers without it just show
+   the semi-transparent background color, which still reads fine. */
+:root:has(.workspace-shell) .workspace-hero {
+  /* dark, near-opaque over the text side; fades out toward the right so the
+     glow blob behind it (::before) shows through vividly, glass-style */
+  background: linear-gradient(100deg,
+    rgba(16,20,28,.90) 0%,
+    rgba(16,20,28,.86) 34%,
+    rgba(16,20,28,.45) 66%,
+    rgba(16,20,28,.18) 100%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255,255,255,.09);
+}
+:root:has(.workspace-shell) .workspace-hero::before {
+  content: "";
+  position: absolute;
+  top: -30%;
+  right: -8%;
+  width: 46%;
+  height: 150%;
+  /* warm amber core fading to a mint rim — leads with amber instead of
+     green/mint so the blend doesn't pass through a murky olive zone */
+  background: radial-gradient(circle at 55% 40%, var(--yellow) 0%, var(--mint) 68%, transparent 74%);
+  filter: blur(52px) saturate(110%);
+  opacity: .50;
+  z-index: -1;
+}
+:root:has(.workspace-shell) .hero-copy p { color: rgba(255,255,255,.80); }
+
+/* Cards, dark mode only: each card gets its own soft corner glow (same
+   blurred-radial technique as the hero), and the glow intensifies on
+   hover — matching the "My Projects" reference. Pick the color per card
+   with a modifier class (.workspace-card--mint/--blue/--coral/--amber/
+   --violet/--green); with no modifier it falls back to the blue accent. */
+:root:has(.workspace-shell) .workspace-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  --card-glow: var(--navy-2);
+  /* glass tile, same idea as the hero: translucent dark base + blur, so the
+     page behind and the card's own corner glow blend through it */
+  background: linear-gradient(155deg, rgba(27,33,48,.60) 0%, rgba(27,33,48,.40) 100%);
+  border: 1px solid transparent; /* visible edge now comes from the ::before gradient ring below */
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+:root:has(.workspace-shell) .workspace-card::after {
+  content: "";
+  position: absolute;
+  top: -28%;
+  right: -22%;
+  width: 62%;
+  height: 85%;
+  background: radial-gradient(circle at 65% 25%, var(--card-glow) 0%, transparent 72%);
+  filter: blur(34px);
+  opacity: .28;
+  z-index: -1;
+  transition: opacity 260ms var(--ease-out), transform 260ms var(--ease-out);
+  pointer-events: none;
+}
+/* Gradient border ring: a strong, crisp line of the card's accent color
+   right at the corner, fading to a plain neutral edge around the rest of
+   the card — matching the reference. Built with the padding-box/mask-xor
+   trick so it works with border-radius (a plain `border-image` would not).
+   Needs mask-composite support (Chrome/Edge/Firefox current, Safari via
+   the -webkit-mask-composite:xor line) — without it the ring just doesn't
+   render and the card falls back to looking like a normal borderless tile. */
+:root:has(.workspace-shell) .workspace-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 1.5px;
+  background:
+    radial-gradient(150% 150% at 84% 8%, var(--card-glow) 0%, var(--card-glow) 16%, transparent 54%),
+    linear-gradient(rgba(255,255,255,.10), rgba(255,255,255,.10));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  transition: opacity 260ms var(--ease-out);
+}
+:root:has(.workspace-shell) .workspace-card--mint   { --card-glow: var(--mint); }
+:root:has(.workspace-shell) .workspace-card--green  { --card-glow: var(--green); }
+:root:has(.workspace-shell) .workspace-card--amber  { --card-glow: var(--yellow); }
+:root:has(.workspace-shell) .workspace-card--coral  { --card-glow: var(--coral); }
+:root:has(.workspace-shell) .workspace-card--blue   { --card-glow: var(--navy-2); }
+:root:has(.workspace-shell) .workspace-card--violet { --card-glow: var(--violet); }
+/* Hover polish gated to fine pointers (same guard as the rest of the file).
+   Also retints the icon with the card's own accent instead of the fixed
+   green from the base rule, so the hover state feels consistent per card
+   (color-mix has broad modern support — Chrome/Edge/Firefox, Safari 16.4+;
+   older browsers just keep the icon's resting color, no error). */
+@media (hover: hover) and (pointer: fine) {
+  :root:has(.workspace-shell) .workspace-card:hover::after {
+    opacity: .60;
+    transform: scale(1.18);
+  }
+  :root:has(.workspace-shell) .workspace-card:hover .workspace-icon {
+    color: var(--card-glow);
+    background: color-mix(in srgb, var(--card-glow) 16%, transparent);
+  }
+  :root:has(.workspace-shell) .workspace-card:hover::before {
+    padding: 1.75px;
+    background:
+      radial-gradient(150% 150% at 84% 8%, var(--card-glow) 0%, var(--card-glow) 26%, transparent 60%),
+      linear-gradient(rgba(255,255,255,.10), rgba(255,255,255,.10));
+  }
 }
 
 * { box-sizing: border-box; }
@@ -45,11 +221,16 @@ body {
   text-rendering: optimizeLegibility;
 }
 .workspace-shell { max-width: 1180px; margin: 0 auto; padding: 34px 28px 60px; }
-
 /* ---------- Hero ---------- */
+/* Light theme: unchanged flat navy gradient. The dark variant (glass panel
+   + amber/mint corner glow) is defined separately above, scoped under
+   :root:has(.workspace-shell) .workspace-hero / .workspace-hero::before —
+   it overrides this rule's background/border only when that scope matches,
+   the animation/layout properties here still apply in both themes. */
 .workspace-hero {
   position: relative;
   overflow: hidden;
+  isolation: isolate; /* keeps the ::before glow confined to this card's own stacking context */
   background:
     radial-gradient(120% 140% at 92% -10%, rgba(159,225,203,.28), transparent 45%),
     linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 100%);
@@ -61,6 +242,7 @@ body {
   transform: translateY(12px);
   animation: rise 620ms var(--ease-out) forwards;
 }
+.hero-copy, .hero-kicker { position: relative; z-index: 1; }
 .hero-kicker {
   display: inline-flex; align-items: center; gap: 8px;
   font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
@@ -70,7 +252,6 @@ body {
 .hero-copy h1 { margin: 0 0 3px; font-size: 33px; line-height: 1.06; font-weight: 700; letter-spacing: -0.02em; }
 .hero-byline { margin: 0 0 15px; font-size: 14px; font-weight: 500; color: var(--mint); letter-spacing: .01em; }
 .hero-copy p { margin: 0; max-width: 62ch; font-size: 15px; line-height: 1.62; color: #CBD9F7; }
-
 /* ---------- Section head + search ---------- */
 .workspace-grid-wrap { margin-top: 30px; }
 .section-heading {
@@ -90,7 +271,6 @@ body {
 }
 .search input::placeholder { color: var(--subtle); }
 .search input:focus { outline: none; border-color: var(--navy-2); box-shadow: 0 0 0 4px var(--focus); }
-
 /* ---------- Cards ---------- */
 .workspace-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .workspace-card {
@@ -134,7 +314,6 @@ body {
 .btn-primary { background: var(--navy); color: #fff; }
 .btn-secondary { background: var(--surface-soft); color: var(--navy); border-color: var(--card-border); }
 .btn-primary .arrow { transition: transform 200ms var(--ease-out); }
-
 .workspace-status {
   display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px;
   font-size: 11px; font-weight: 700; letter-spacing: .02em; white-space: nowrap;
@@ -143,7 +322,6 @@ body {
 .workspace-status .pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
 .workspace-status.migrating { background: rgba(247,215,116,.26); color: #7A5A00; }
 .workspace-status.migrating .pulse { background: var(--yellow); }
-
 /* Hover polish — gated for fine pointers only */
 @media (hover: hover) and (pointer: fine) {
   .workspace-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--border-strong); }
@@ -153,22 +331,18 @@ body {
   .btn-secondary:hover { border-color: var(--border-strong); }
 }
 .workspace-card:active { transform: scale(.99); }
-
 .empty-state {
   grid-column: 1 / -1; text-align: center; padding: 48px 20px;
   color: var(--muted); border: 1px dashed var(--border-strong);
   border-radius: var(--radius-lg); background: var(--surface);
 }
 .empty-state strong { display: block; color: var(--text); font-size: 15px; margin-bottom: 4px; }
-
 @keyframes rise { to { opacity: 1; transform: translateY(0) scale(1); } }
-
 /* Respect reduced motion — keep opacity, drop movement */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; transition-duration: .01ms !important; }
   .workspace-hero, .workspace-card { opacity: 1; transform: none; }
 }
-
 @media (max-width: 1024px) {
   .workspace-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -179,7 +353,6 @@ body {
   .section-heading { flex-direction: column; align-items: stretch; }
   .search { min-width: 0; }
 }
-
 @media print {
   body { margin: 0; padding: .4in .6in; background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .workspace-shell { max-width: 100% !important; }
