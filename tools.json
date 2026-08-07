@@ -63,7 +63,7 @@
     "id": "pocontrol",
     "name": "PO Control",
     "icon": "ti-receipt-2",
-    "path": "./po-control/",
+    "path": "https://script.google.com/a/macros/komodohealth.com/s/AKfycbyH3aTBOULHHvYu52C7fkLWgOxTF8iRIiqJYuONZ0hHMOnLFnGkVFDlnRNPMmXcfqJa/exec",
     "legacyPath": null,
     "status": "live",
     "summary": "Track Plan vs Actual vs open POs by vendor and L2, with fiscal-year filters, Projects, and in-browser upload for Plan/Actual and Zip POs feeds.",
