@@ -179,12 +179,28 @@
   pointer-events: none;
   transition: opacity 260ms var(--ease-out);
 }
-:root:has(.workspace-shell) .workspace-card--mint   { --card-glow: var(--mint); }
-:root:has(.workspace-shell) .workspace-card--green  { --card-glow: var(--green); }
-:root:has(.workspace-shell) .workspace-card--amber  { --card-glow: var(--yellow); }
-:root:has(.workspace-shell) .workspace-card--coral  { --card-glow: var(--coral); }
-:root:has(.workspace-shell) .workspace-card--blue   { --card-glow: var(--navy-2); }
-:root:has(.workspace-shell) .workspace-card--violet { --card-glow: var(--violet); }
+/* Auto-rotate the accent by position — this is what makes the colors show
+   up WITHOUT editing your HTML at all. Every 1st/7th/13th... card in
+   .workspace-grid gets mint, every 2nd/8th/14th gets blue, and so on. If
+   your markup doesn't add a .workspace-card--xxx class (see below), this is
+   the only thing assigning --card-glow, which is why every card was
+   falling back to the plain blue default before. */
+:root:has(.workspace-shell) .workspace-grid .workspace-card:nth-child(6n+1) { --card-glow: var(--mint); }
+:root:has(.workspace-shell) .workspace-grid .workspace-card:nth-child(6n+2) { --card-glow: var(--navy-2); }
+:root:has(.workspace-shell) .workspace-grid .workspace-card:nth-child(6n+3) { --card-glow: var(--coral); }
+:root:has(.workspace-shell) .workspace-grid .workspace-card:nth-child(6n+4) { --card-glow: var(--yellow); }
+:root:has(.workspace-shell) .workspace-grid .workspace-card:nth-child(6n+5) { --card-glow: var(--violet); }
+:root:has(.workspace-shell) .workspace-grid .workspace-card:nth-child(6n)   { --card-glow: var(--green); }
+/* Optional manual override: add one of these classes to a specific card's
+   markup to pin its color regardless of position (specificity is tuned to
+   beat the nth-child rules above). Not required — the rotation above is
+   the default and needs no HTML changes. */
+:root:has(.workspace-shell) .workspace-grid .workspace-card.workspace-card--mint   { --card-glow: var(--mint); }
+:root:has(.workspace-shell) .workspace-grid .workspace-card.workspace-card--green  { --card-glow: var(--green); }
+:root:has(.workspace-shell) .workspace-grid .workspace-card.workspace-card--amber  { --card-glow: var(--yellow); }
+:root:has(.workspace-shell) .workspace-grid .workspace-card.workspace-card--coral  { --card-glow: var(--coral); }
+:root:has(.workspace-shell) .workspace-grid .workspace-card.workspace-card--blue   { --card-glow: var(--navy-2); }
+:root:has(.workspace-shell) .workspace-grid .workspace-card.workspace-card--violet { --card-glow: var(--violet); }
 /* Hover polish gated to fine pointers (same guard as the rest of the file).
    Also retints the icon with the card's own accent instead of the fixed
    green from the base rule, so the hover state feels consistent per card
