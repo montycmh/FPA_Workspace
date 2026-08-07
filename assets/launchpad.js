@@ -1,3 +1,14 @@
+const PO_CONTROL_URL =
+  'https://script.google.com/a/macros/komodohealth.com/s/AKfycbyH3aTBOULHHvYu52C7fkLWgOxTF8iRIiqJYuONZ0hHMOnLFnGkVFDlnRNPMmXcfqJa/exec';
+
+function isPOControl(tool) {
+  return String(tool.name || '').trim().toLowerCase() === 'po control';
+}
+
+function getToolPath(tool) {
+  return isPOControl(tool) ? PO_CONTROL_URL : tool.path;
+}
+
 async function loadCatalog(){
   const res = await fetch('./tools.json');
   if(!res.ok) throw new Error('Could not load tools.json');
@@ -9,6 +20,8 @@ function statusLabel(status){ return status === 'live' ? 'Live' : 'Migrating'; }
 
 function cardMarkup(t, i){
   const search = (t.name + ' ' + (t.tags || []).join(' ') + ' ' + (t.summary || '')).toLowerCase();
+  const path = getToolPath(t);
+
   return `
     <article class="workspace-card" data-search="${search}" style="animation-delay:${i * 45}ms">
       <div class="workspace-card-top">
@@ -21,8 +34,13 @@ function cardMarkup(t, i){
         ${(t.tags || []).slice(0, 3).map(tag => `<span class="workspace-pill">${tag}</span>`).join('')}
       </div>
       <div class="workspace-actions">
-        <a class="btn btn-primary" href="${t.path}">Open Module<i class="ti ti-arrow-right arrow"></i></a>
-        ${t.legacyPath ? `<a class="btn btn-secondary" href="${t.legacyPath}"><i class="ti ti-history"></i>Legacy</a>` : ''}
+        <a class="btn btn-primary" href="${path}">
+          Open Module<i class="ti ti-arrow-right arrow"></i>
+        </a>
+        ${!isPOControl(t) && t.legacyPath ? `
+          <a class="btn btn-secondary" href="${t.legacyPath}">
+            <i class="ti ti-history"></i>Legacy
+          </a>` : ''}
       </div>
     </article>`;
 }
@@ -40,16 +58,20 @@ function initSearch(){
   const input = document.getElementById('search-input');
   const grid = document.getElementById('workspace-grid');
   if(!input) return;
+
   input.addEventListener('input', () => {
     const q = input.value.trim().toLowerCase();
     let visible = 0;
+
     grid.querySelectorAll('.workspace-card').forEach(card => {
       const match = !q || card.dataset.search.includes(q);
       card.classList.toggle('is-hidden', !match);
       if(match) visible++;
     });
+
     const existing = grid.querySelector('.empty-state');
     if(existing) existing.remove();
+
     if(!visible){
       const el = document.createElement('div');
       el.className = 'empty-state';
@@ -61,11 +83,15 @@ function initSearch(){
 
 (async function init(){
   const mount = document.getElementById('workspace-grid');
+
   try {
     const tools = await loadCatalog();
     renderCards(tools);
     initSearch();
   } catch (err){
-    mount.innerHTML = '<div class="empty-state"><strong>Could not load modules</strong>' + err.message + '</div>';
+    mount.innerHTML =
+      '<div class="empty-state"><strong>Could not load modules</strong>' +
+      err.message +
+      '</div>';
   }
 })();
