@@ -419,6 +419,7 @@
       },
       quarter: {
         monthLabels: parsed.quarter.monthLabels,
+        allRows: parsed.quarter.dataRows,
         expense: quarterExpense,
         l2Rows: l2QuarterRows,
         kpis: {
@@ -435,6 +436,7 @@
       },
       year: {
         elapsedMonths: trend.labels,
+        allRows: parsed.year.dataRows,
         expense: yearExpense,
         l2Rows: l2YearRows,
         kpis: { kpi5: yearExpense.total.w - yearExpense.total.p, kpi6: yearExpense.total.w - yearExpense.total.f },
@@ -653,7 +655,7 @@
       <div class="sublbl">Waterfall</div>
       <div class="wf-wrap"><canvas id="${id}-wf"></canvas></div>
       <div class="sublbl">L2 detail</div>
-      <div class="tbl-wrap">${renderQuarterTable(rows, benchmarkKey, monthLabels, totalRow)}</div>
+      <div class="tbl-wrap">${renderQuarterTable(rows, benchmarkKey, monthLabels, totalRow, id)}</div>
       <div class="sublbl">Drivers</div>
       ${blocks.map(b => renderDriverBlock(b)).join('') || '<div class="comment-block">No driver block crossed the materiality threshold for this section.</div>'}
       <div class="sublbl">Additional Comments</div>
@@ -671,7 +673,7 @@
       <div class="sublbl">Waterfall</div>
       <div class="wf-wrap"><canvas id="${id}-wf"></canvas></div>
       <div class="sublbl">L2 detail</div>
-      <div class="tbl-outer"><div class="tbl-inner">${renderYearTable(rows, benchmarkKey, totalRow)}</div></div>
+      <div class="tbl-outer"><div class="tbl-inner">${renderYearTable(rows, benchmarkKey, totalRow, id)}</div></div>
       <div class="sublbl">Drivers</div>
       ${blocks.map(b => renderDriverBlock(b)).join('') || '<div class="comment-block">No driver block crossed the materiality threshold for this section.</div>'}
       <div class="sublbl">Additional Comments</div>
@@ -680,7 +682,8 @@
     </section>`;
   }
 
-  function renderQuarterTable(rows, benchmarkKey, monthLabels, totalRow){
+  function renderQuarterTable(rows, benchmarkKey, monthLabels, totalRow, sectionId){
+    const drill = sectionId === 'sec-qplan' || sectionId === 'sec-qfcst';
     let h = '<table><thead><tr><th>Category</th><th class="yw tot-col">Q Working</th><th class="tot-col">' + (benchmarkKey==='p'?'Q Plan':'Q FCST') + '</th><th class="yv tot-col tot-end">Q Var</th>';
     monthLabels.forEach((m, idx) => { const rv = idx===REVIEW_MONTH_IDX; h += `<th class="yw${rv?' rev-col rev-start':''}">${escapeHtml(m)} W</th><th class="${rv?'rev-col':''}">${escapeHtml(m)} ${benchmarkKey==='p'?'P':'F'}</th><th class="mv${rv?' rev-col rev-end':''}">Var</th>`; });
     h += '</tr></thead><tbody>';
@@ -689,11 +692,19 @@
     orderedRows.forEach(r => {
       const qVar = r.total.w - r.total[benchmarkKey];
       const trCls = r.rowType === 'expense' ? 'tr-exp' : '';
-      h += `<tr class="${trCls}"><td>${escapeHtml(cleanLabel(r.label))}</td><td class="yw tot-col">${fmtK(r.total.w)}</td><td class="tot-col">${fmtK(r.total[benchmarkKey])}</td><td class="yv tot-col tot-end ${varClass(qVar)}">${fmtK(qVar)}</td>`;
+      const dc = drill ? ' drill-cell' : '';
+      const da = (period, periodLabel) => drill ? ` data-drill="1" data-scope="q" data-row-index="${r.index}" data-period="${period}" data-benchmark="${benchmarkKey}" data-label="${escapeHtml(cleanLabel(r.label))}" data-period-label="${escapeHtml(periodLabel)}"` : '';
+      h += `<tr class="${trCls}"><td>${escapeHtml(cleanLabel(r.label))}</td>`+
+           `<td class="yw tot-col${dc}"${da('q','Quarter total')}>${fmtK(r.total.w)}</td>`+
+           `<td class="tot-col${dc}"${da('q','Quarter total')}>${fmtK(r.total[benchmarkKey])}</td>`+
+           `<td class="yv tot-col tot-end ${varClass(qVar)}${dc}"${da('q','Quarter total')}>${fmtK(qVar)}</td>`;
       r.months.forEach((m, idx) => {
         const mv = m.w - m[benchmarkKey];
         const rv = idx===REVIEW_MONTH_IDX;
-        h += `<td class="yw${rv?' rev-col rev-start':''}">${fmtK(m.w)}</td><td class="${rv?'rev-col':''}">${fmtK(m[benchmarkKey])}</td><td class="mv${rv?' rev-col rev-end':''} ${varClass(mv)}">${fmtK(mv)}</td>`;
+        const pl = m.label || monthLabels[idx] || ('Month ' + (idx+1));
+        h += `<td class="yw${rv?' rev-col rev-start':''}${dc}"${da(idx,pl)}>${fmtK(m.w)}</td>`+
+             `<td class="${rv?'rev-col':''}${dc}"${da(idx,pl)}>${fmtK(m[benchmarkKey])}</td>`+
+             `<td class="mv${rv?' rev-col rev-end':''} ${varClass(mv)}${dc}"${da(idx,pl)}>${fmtK(mv)}</td>`;
       });
       h += '</tr>';
     });
@@ -701,7 +712,8 @@
     return h;
   }
 
-  function renderYearTable(rows, benchmarkKey, totalRow){
+  function renderYearTable(rows, benchmarkKey, totalRow, sectionId){
+    const drill = sectionId === 'sec-fyplan' || sectionId === 'sec-fyfcst';
     let h = '<table><thead><tr><th>Category</th><th class="yw tot-col">FY Working</th><th class="tot-col">' + (benchmarkKey==='p'?'FY Plan':'FY FCST') + '</th><th class="yv tot-col tot-end">FY Var</th>';
     ['Q1','Q2','Q3','Q4'].forEach((q, idx) => { const rv = idx===REVIEW_Q_IDX; h += `<th class="yw${rv?' rev-col rev-start':''}">${q} W</th><th class="${rv?'rev-col':''}">${q} ${benchmarkKey==='p'?'P':'F'}</th><th class="mv${rv?' rev-col rev-end':''}">Var</th>`; });
     h += '</tr></thead><tbody>';
@@ -710,11 +722,19 @@
     orderedRows.forEach(r => {
       const fyVar = r.total.w - r.total[benchmarkKey];
       const trCls = r.rowType === 'expense' ? 'tr-exp' : '';
-      h += `<tr class="${trCls}"><td>${escapeHtml(cleanLabel(r.label))}</td><td class="yw tot-col">${fmtK(r.total.w)}</td><td class="tot-col">${fmtK(r.total[benchmarkKey])}</td><td class="yv tot-col tot-end ${varClass(fyVar)}">${fmtK(fyVar)}</td>`;
+      const dc = drill ? ' drill-cell' : '';
+      const da = (period, periodLabel) => drill ? ` data-drill="1" data-scope="y" data-row-index="${r.index}" data-period="${period}" data-benchmark="${benchmarkKey}" data-label="${escapeHtml(cleanLabel(r.label))}" data-period-label="${escapeHtml(periodLabel)}"` : '';
+      h += `<tr class="${trCls}"><td>${escapeHtml(cleanLabel(r.label))}</td>`+
+           `<td class="yw tot-col${dc}"${da('fy','Full year')}>${fmtK(r.total.w)}</td>`+
+           `<td class="tot-col${dc}"${da('fy','Full year')}>${fmtK(r.total[benchmarkKey])}</td>`+
+           `<td class="yv tot-col tot-end ${varClass(fyVar)}${dc}"${da('fy','Full year')}>${fmtK(fyVar)}</td>`;
       r.quarters.forEach((q, idx) => {
         const qVar = q.w - q[benchmarkKey];
         const rv = idx===REVIEW_Q_IDX;
-        h += `<td class="yw${rv?' rev-col rev-start':''}">${fmtK(q.w)}</td><td class="${rv?'rev-col':''}">${fmtK(q[benchmarkKey])}</td><td class="mv${rv?' rev-col rev-end':''} ${varClass(qVar)}">${fmtK(qVar)}</td>`;
+        const pl = q.label || ('Q' + (idx+1));
+        h += `<td class="yw${rv?' rev-col rev-start':''}${dc}"${da(idx,pl)}>${fmtK(q.w)}</td>`+
+             `<td class="${rv?'rev-col':''}${dc}"${da(idx,pl)}>${fmtK(q[benchmarkKey])}</td>`+
+             `<td class="mv${rv?' rev-col rev-end':''} ${varClass(qVar)}${dc}"${da(idx,pl)}>${fmtK(qVar)}</td>`;
       });
       h += '</tr>';
     });
@@ -830,6 +850,13 @@
     document.getElementById('add-act').addEventListener('click', addAction);
     document.querySelectorAll('[data-act-cb]').forEach(cb => cb.addEventListener('change', saveState));
     document.querySelectorAll('[data-persist]').forEach(el => el.addEventListener('input', () => { autoResize(el); saveState(); }));
+    if(!dom.root.dataset.drillBound){
+      dom.root.addEventListener('click', e => {
+        const cell = e.target.closest('[data-drill="1"]');
+        if(cell) openDrill(cell);
+      });
+      dom.root.dataset.drillBound = '1';
+    }
     updateActionCounter();
     document.querySelectorAll('textarea').forEach(autoResize);
     window.addEventListener('scroll', scrollSpy, { passive:true });
@@ -1025,11 +1052,12 @@
         else { i.setAttribute('value', i.value); }
       });
       const clone = document.documentElement.cloneNode(true);
-      clone.querySelectorAll('.hidden, .del-btn, .del-block, .add-act, .mini-btn, .ghost-btn, .topbar-actions, #save-nav, #download-nav, #download-pdf-nav, #back-nav, #home-nav').forEach(el => el.remove());
+      clone.querySelectorAll('.hidden, .del-btn, .del-block, .add-act, .mini-btn, .ghost-btn, .topbar-actions, #save-nav, #download-nav, #download-pdf-nav, #back-nav, #home-nav, #drill-overlay').forEach(el => el.remove());
       freezeCanvasesAsImages(clone);
       stripLiveScripts(clone);
       inlineCssIntoClone(clone, cssText);
       appendExportScript(clone);
+      appendDrillExportScript(clone);
       const html = '<!DOCTYPE html>\n' + clone.outerHTML;
       const blob = new Blob([html], { type:'text/html' });
       const a = document.createElement('a');
@@ -1250,6 +1278,377 @@
         plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c) { return c.dataset.label + ': $' + Math.round(c.raw/1000) + 'K'; } } } }
       }
     });
+  }
+
+  // ---------- Vendor drill-down (piloto Q vs Plan) ----------
+  function buildGlMap(rows){
+    const map = {}; let pending = [];
+    for(let i=0;i<rows.length;i++){
+      const r = rows[i];
+      if(r.rowType === 'vendor' || r.rowType === 'novendor'){ pending.push(r.index); continue; }
+      if(r.rowType === 'gl'){ pending.forEach(idx => { map[idx] = r.label; }); pending = []; continue; }
+      if(r.rowType === 'l2' || r.rowType === 'expense'){ pending = []; }
+    }
+    return map;
+  }
+
+  function collectVendorRows(allRows, l2RowIndex){
+    const idx = allRows.findIndex(r => r.index === l2RowIndex);
+    const out = [];
+    for(let i = idx - 1; i >= 0; i--){
+      const row = allRows[i];
+      if(row.rowType === 'l2' || row.rowType === 'expense') break;
+      if(row.rowType === 'vendor' || row.rowType === 'novendor') out.push(row);
+    }
+    return out;
+  }
+
+  function vendorPeriodValues(row, period, benchmarkKey){
+    if(period === 'q') return { working: row.total.w, benchmark: row.total[benchmarkKey] };
+    const m = row.months[period];
+    return { working: m.w, benchmark: m[benchmarkKey] };
+  }
+
+  function computeQuarterVendorBreakdown(l2RowIndex, period, benchmarkKey){
+    const allRows = (state.model && state.model.quarter && state.model.quarter.allRows) || [];
+    const glMap = buildGlMap(allRows);
+    const target = allRows.find(r => r.index === l2RowIndex);
+    let vendorRows;
+    if(target && target.rowType === 'expense'){
+      vendorRows = allRows.filter(r => r.rowType === 'vendor' || r.rowType === 'novendor');
+    } else {
+      vendorRows = collectVendorRows(allRows, l2RowIndex);
+    }
+    return vendorRows.map(row => {
+      const vals = vendorPeriodValues(row, period, benchmarkKey);
+      return { name: cleanLabel(row.label), gl: glMap[row.index] || '', working: vals.working, benchmark: vals.benchmark, variance: vals.working - vals.benchmark };
+    }).sort((a,b) => Math.abs(b.variance) - Math.abs(a.variance));
+  }
+
+  function collectVendorRowsFlex(allRows, l2RowIndex){
+    const idx = allRows.findIndex(r => r.index === l2RowIndex);
+    const vend = [], gl = [];
+    for(let i = idx - 1; i >= 0; i--){
+      const row = allRows[i];
+      if(row.rowType === 'l2' || row.rowType === 'expense') break;
+      if(row.rowType === 'vendor' || row.rowType === 'novendor') vend.push(row);
+      else if(row.rowType === 'gl') gl.push(row);
+    }
+    return vend.length ? vend : gl;
+  }
+
+  function yearVendorPeriodValues(row, period, benchmarkKey){
+    if(period === 'fy') return { working: row.total.w, benchmark: row.total[benchmarkKey] };
+    const q = row.quarters[period];
+    return { working: q.w, benchmark: q[benchmarkKey] };
+  }
+
+  function computeYearVendorBreakdown(l2RowIndex, period, benchmarkKey){
+    const allRows = (state.model && state.model.year && state.model.year.allRows) || [];
+    const glMap = buildGlMap(allRows);
+    const target = allRows.find(r => r.index === l2RowIndex);
+    let vendorRows;
+    if(target && target.rowType === 'expense'){
+      vendorRows = allRows.filter(r => r.rowType === 'vendor' || r.rowType === 'novendor');
+      if(!vendorRows.length) vendorRows = allRows.filter(r => r.rowType === 'gl');
+    } else {
+      vendorRows = collectVendorRowsFlex(allRows, l2RowIndex);
+    }
+    return vendorRows.map(row => {
+      const vals = yearVendorPeriodValues(row, period, benchmarkKey);
+      return { name: cleanLabel(row.label), gl: glMap[row.index] || '', working: vals.working, benchmark: vals.benchmark, variance: vals.working - vals.benchmark };
+    }).sort((a,b) => Math.abs(b.variance) - Math.abs(a.variance));
+  }
+
+  // Self-contained drill-down used by the exported HTML (app.js is stripped on export,
+  // so this function carries its own helpers + reads vendor data from an embedded object).
+  function initDrilldown(root, data){
+    data = data || { quarter: [], year: [] };
+    function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function fmtK(n){ if(!isFinite(n)||n===0) return '—'; var r=Math.round(n/1000); var a=Math.abs(r).toLocaleString('en-US'); return r>0?('+$'+a+'K'):('-$'+a+'K'); }
+    function fmtKplain(n){ if(!isFinite(n)||n===0) return '—'; var r=Math.round(n/1000); var a=Math.abs(r).toLocaleString('en-US'); return r<0?('($'+a+'K)'):('$'+a+'K'); }
+    function cleanLabel(s){ return String(s==null?'':s).replace(/^Total\s+/,''); }
+    function collect(rows, l2Index, flex){
+      var idx=rows.findIndex(function(r){return r.index===l2Index;});
+      var vend=[], gl=[];
+      for(var i=idx-1;i>=0;i--){ var row=rows[i]; if(row.rowType==='l2'||row.rowType==='expense') break; if(row.rowType==='vendor'||row.rowType==='novendor') vend.push(row); else if(row.rowType==='gl') gl.push(row); }
+      return flex ? (vend.length?vend:gl) : vend;
+    }
+    function glmap(rows){ var m={},pending=[]; for(var i=0;i<rows.length;i++){ var r=rows[i]; if(r.rowType==='vendor'||r.rowType==='novendor'){pending.push(r.index);continue;} if(r.rowType==='gl'){for(var k=0;k<pending.length;k++) m[pending[k]]=r.label; pending=[];continue;} if(r.rowType==='l2'||r.rowType==='expense'){pending=[];} } return m; }
+    function qVals(row, period, bk){ if(period==='q') return {working:row.total.w, benchmark:row.total[bk]}; var m=row.months[period]; return {working:m.w, benchmark:m[bk]}; }
+    function yVals(row, period, bk){ if(period==='fy') return {working:row.total.w, benchmark:row.total[bk]}; var q=row.quarters[period]; return {working:q.w, benchmark:q[bk]}; }
+    function computeQ(rowIndex, period, bk){
+      var rows=data.quarter||[]; var gm=glmap(rows); var t=rows.find(function(r){return r.index===rowIndex;}); var vr;
+      if(t&&t.rowType==='expense') vr=rows.filter(function(r){return r.rowType==='vendor'||r.rowType==='novendor';}); else vr=collect(rows,rowIndex,false);
+      return vr.map(function(row){ var val=qVals(row,period,bk); return {name:cleanLabel(row.label), gl:gm[row.index]||'', working:val.working, benchmark:val.benchmark, variance:val.working-val.benchmark}; }).sort(function(a,b){return Math.abs(b.variance)-Math.abs(a.variance);});
+    }
+    function computeY(rowIndex, period, bk){
+      var rows=data.year||[]; var gm=glmap(rows); var t=rows.find(function(r){return r.index===rowIndex;}); var vr;
+      if(t&&t.rowType==='expense'){ vr=rows.filter(function(r){return r.rowType==='vendor'||r.rowType==='novendor';}); if(!vr.length) vr=rows.filter(function(r){return r.rowType==='gl';}); } else vr=collect(rows,rowIndex,true);
+      return vr.map(function(row){ var val=yVals(row,period,bk); return {name:cleanLabel(row.label), gl:gm[row.index]||'', working:val.working, benchmark:val.benchmark, variance:val.working-val.benchmark}; }).sort(function(a,b){return Math.abs(b.variance)-Math.abs(a.variance);});
+    }
+    var ctx=null;
+    function ensure(){
+      var o=document.getElementById('drill-overlay'); if(o) return o;
+      o=document.createElement('div'); o.id='drill-overlay'; o.className='drill-overlay';
+      o.innerHTML='<div class="drill-panel" id="drill-panel" role="dialog" aria-modal="true"></div>';
+      document.body.appendChild(o);
+      o.addEventListener('click', function(e){ if(e.target===o) close(); });
+      document.addEventListener('keydown', function(e){ if(e.key==='Escape') close(); });
+      return o;
+    }
+    function close(){ var o=document.getElementById('drill-overlay'); var p=document.getElementById('drill-panel'); if(p)p.classList.remove('show'); if(o)o.classList.remove('show'); }
+    function open(cell){
+      var rowIndex=Number(cell.dataset.rowIndex), scope=cell.dataset.scope||'q', bk=cell.dataset.benchmark, bl=bk==='p'?'Plan':'FCST', vendors, threshold;
+      if(scope==='y'){ var py=cell.dataset.period==='fy'?'fy':Number(cell.dataset.period); vendors=computeY(rowIndex,py,bk); threshold=75; }
+      else { var pq=cell.dataset.period==='q'?'q':Number(cell.dataset.period); vendors=computeQ(rowIndex,pq,bk); threshold=25; }
+      render({title:cell.dataset.label, periodLabel:cell.dataset.periodLabel, benchmarkLabel:bl, vendors:vendors, threshold:threshold});
+    }
+    function render(c){
+      ctx=Object.assign({mode:'materiality', threshold:25, search:''}, c);
+      var overlay=ensure(), panel=document.getElementById('drill-panel');
+      panel.innerHTML=''
+        +'<div class="drill-hdr"><div><h3>'+esc(c.title)+'</h3><div class="drill-sub">'+esc(c.periodLabel)+' \u00b7 Working vs '+esc(c.benchmarkLabel)+'</div></div><button class="drill-close" id="drill-close">&times;</button></div>'
+        +'<div class="drill-controls"><div class="drill-seg"><button class="drill-seg-btn" data-mode="materiality">By materiality</button><button class="drill-seg-btn" data-mode="activity" title="With Activity (excluding zero)">With activity</button><button class="drill-seg-btn" data-mode="all">Show all</button></div>'
+        +'<div class="drill-thr" id="drill-thr-wrap"><span>\u00b1\u00a0$</span><input type="number" id="drill-thr" min="0" step="5" value="'+c.threshold+'" /><span>K</span></div></div>'
+        +'<div class="drill-search" id="drill-search-wrap"><i class="ti ti-search"></i><input type="text" id="drill-search" placeholder="Search vendor by id or name..." /></div>'
+        +'<div class="drill-body" id="drill-body"></div>';
+      panel.querySelector('#drill-close').addEventListener('click', close);
+      panel.querySelectorAll('.drill-seg-btn').forEach(function(btn){ btn.addEventListener('click', function(){ ctx.mode=btn.dataset.mode; body(); }); });
+      var thr=panel.querySelector('#drill-thr'); if(thr) thr.addEventListener('input', function(){ var val=parseFloat(thr.value); ctx.threshold=isFinite(val)?val:0; if(ctx.mode==='materiality') body(); });
+      var s=panel.querySelector('#drill-search'); if(s) s.addEventListener('input', function(){ ctx.search=s.value; if(ctx.mode==='all') body(); });
+      var be=panel.querySelector('#drill-body'); if(be) be.addEventListener('click', function(e){ var b=e.target.closest('.drill-gl-btn'); if(!b) return; var row=b.closest('.drill-bar-row'); if(!row) return; var open=row.classList.toggle('gl-open'); var ic=b.querySelector('i'); if(ic) ic.className=open?'ti ti-eye-off':'ti ti-eye'; });
+      body(); overlay.classList.add('show'); requestAnimationFrame(function(){ panel.classList.add('show'); });
+    }
+    function body(){
+      var panel=document.getElementById('drill-panel'); if(!panel||!ctx) return;
+      var bd=panel.querySelector('#drill-body');
+      panel.querySelectorAll('.drill-seg-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.mode===ctx.mode); });
+      var tw=panel.querySelector('#drill-thr-wrap'); if(tw) tw.style.display=ctx.mode==='materiality'?'flex':'none';
+      var sw=panel.querySelector('#drill-search-wrap'); if(sw) sw.style.display=ctx.mode==='all'?'flex':'none';
+      var all=ctx.vendors;
+      var totW=all.reduce(function(s,v){return s+v.working;},0), totB=all.reduce(function(s,v){return s+v.benchmark;},0), totVar=totW-totB, util=totB?Math.round(totW/totB*100):null;
+      var thrAbs=(ctx.threshold||0)*1000, shown;
+      if(ctx.mode==='materiality') shown=all.filter(function(v){return Math.abs(v.variance)>=thrAbs;});
+      else if(ctx.mode==='activity') shown=all.filter(function(v){return v.working!==0||v.benchmark!==0;});
+      else { shown=all; var q=(ctx.search||'').trim().toLowerCase(); if(q) shown=shown.filter(function(v){return v.name.toLowerCase().indexOf(q)!==-1;}); }
+      var maxVal=Math.max.apply(null,[1].concat(shown.map(function(v){return Math.max(Math.abs(v.working),Math.abs(v.benchmark));})));
+      function bar(v){
+        var wPct=Math.min(100,Math.abs(v.working)/maxVal*100), bPct=Math.min(100,Math.abs(v.benchmark)/maxVal*100), over=v.variance>0;
+        var vu=v.benchmark?((v.variance>0?'+':'')+Math.round(v.variance/v.benchmark*100)+'%'):(v.working?'not in plan':'\u2014');
+        return '<div class="drill-bar-row"><div class="drill-bar-top"><span class="drill-bar-left"><span class="drill-bar-name">'+esc(v.name)+'</span>'+(v.gl?'<button class="drill-gl-btn" type="button" title="Show GL account"><i class="ti ti-eye"></i></button>':'')+'</span><span class="drill-bar-fig">'+fmtKplain(v.working)+' / '+fmtKplain(v.benchmark)+'</span></div><div class="drill-track"><div class="drill-fill '+(over?'unfav':'fav')+'" style="width:'+wPct+'%"></div>'+(v.benchmark?'<div class="drill-plan-marker" style="left:'+bPct+'%"></div>':'')+'</div><div class="drill-util '+(over?'var-unfav':'var-fav')+'">'+esc(vu)+' vs '+esc(ctx.benchmarkLabel.toLowerCase())+' \u00b7 '+fmtK(v.variance)+'</div>'+(v.gl?'<div class="drill-gl-line"><i class="ti ti-receipt-2"></i>GL account \u00b7 '+esc(v.gl)+'</div>':'')+'</div>';
+      }
+      var unfav=shown.filter(function(v){return v.variance>0;}).sort(function(a,b){return b.variance-a.variance;});
+      var fav=shown.filter(function(v){return v.variance<0;}).sort(function(a,b){return a.variance-b.variance;});
+      var neu=shown.filter(function(v){return v.variance===0;});
+      function gh(cls,main,note,count){ return '<div class="drill-group-hdr '+cls+'"><span class="ghl"><span class="gmain">'+main+'</span><span class="gnote">('+note+')</span></span><span class="gcount">'+count+'</span></div>'; }
+      var bars='';
+      if(fav.length) bars+=gh('fav','Favorable','Savings',fav.length)+fav.map(bar).join('');
+      if(unfav.length) bars+=gh('unfav','Unfavorable','Overspend',unfav.length)+unfav.map(bar).join('');
+      if(neu.length) bars+=gh('neu','No Variance','In line with Plan',neu.length)+neu.map(bar).join('');
+      var ct;
+      if(ctx.mode==='materiality') ct='Showing '+shown.length+' of '+all.length+' vendors \u00b7 materiality \u00b1 $'+ctx.threshold+'K';
+      else if(ctx.mode==='activity') ct='Showing '+shown.length+' of '+all.length+' vendors \u00b7 with activity (excluding zero)';
+      else { var q2=(ctx.search||'').trim(); ct=q2?('Showing '+shown.length+' of '+all.length+' vendors \u00b7 search "'+q2+'"'):('Showing all '+all.length+' vendors'); }
+      bd.innerHTML='<div class="drill-summary"><div class="ds"><div class="k">Working</div><div class="val">'+fmtKplain(totW)+'</div></div><div class="ds"><div class="k">'+esc(ctx.benchmarkLabel)+'</div><div class="val">'+fmtKplain(totB)+'</div></div><div class="ds"><div class="k">Variance</div><div class="val '+(totVar<0?'kpi-fav':totVar>0?'kpi-unfav':'kpi-neu')+'">'+fmtK(totVar)+'</div></div><div class="ds"><div class="k">Utilization</div><div class="val">'+(util===null?'\u2014':util+'%')+'</div></div></div><div class="drill-count">'+esc(ct)+'</div>'+(shown.length?bars:('<div class="drill-empty">'+(ctx.mode==='materiality'?'No vendors within this materiality range.':'No vendors to display.')+'</div>'));
+    }
+    var container=root||document;
+    container.addEventListener('click', function(e){ var t=e.target; if(!t||!t.closest) return; var cell=t.closest('[data-drill="1"]'); if(cell) open(cell); });
+  }
+
+  // Build the minimal vendor dataset embedded into the exported HTML.
+  function buildDrillData(){
+    var m = state.model || {};
+    function slim(rows, kind){
+      return (rows||[]).map(function(r){
+        var o = { index:r.index, rowType:r.rowType, label:r.label, total:{ w:r.total.w, p:r.total.p, f:r.total.f } };
+        if(kind==='q') o.months = (r.months||[]).map(function(x){ return { w:x.w, p:x.p, f:x.f }; });
+        else o.quarters = (r.quarters||[]).map(function(x){ return { w:x.w, p:x.p, f:x.f }; });
+        return o;
+      });
+    }
+    return { quarter: slim(m.quarter && m.quarter.allRows, 'q'), year: slim(m.year && m.year.allRows, 'y') };
+  }
+
+  function appendDrillExportScript(clone){
+    try{
+      var json = JSON.stringify(buildDrillData()).replace(/</g, '\\u003c');
+      var script = document.createElement('script');
+      script.textContent = '(' + initDrilldown.toString() + ')(document, ' + json + ');';
+      var body = clone.querySelector('body');
+      if(body) body.appendChild(script);
+    }catch(e){ console.warn('Could not embed drill-down into export.', e); }
+  }
+
+  function ensureDrillPanel(){
+    let overlay = document.getElementById('drill-overlay');
+    if(overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.id = 'drill-overlay';
+    overlay.className = 'drill-overlay';
+    overlay.innerHTML = '<div class="drill-panel" id="drill-panel" role="dialog" aria-modal="true"></div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if(e.target === overlay) closeDrill(); });
+    document.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrill(); });
+    return overlay;
+  }
+
+  function closeDrill(){
+    const overlay = document.getElementById('drill-overlay');
+    const panel = document.getElementById('drill-panel');
+    if(panel) panel.classList.remove('show');
+    if(overlay) overlay.classList.remove('show');
+  }
+
+  function openDrill(cell){
+    const rowIndex = Number(cell.dataset.rowIndex);
+    const scope = cell.dataset.scope || 'q';
+    const benchmarkKey = cell.dataset.benchmark;
+    const benchmarkLabel = benchmarkKey === 'p' ? 'Plan' : 'FCST';
+    let vendors, threshold;
+    if(scope === 'y'){
+      const period = cell.dataset.period === 'fy' ? 'fy' : Number(cell.dataset.period);
+      vendors = computeYearVendorBreakdown(rowIndex, period, benchmarkKey);
+      threshold = 75;
+    } else {
+      const period = cell.dataset.period === 'q' ? 'q' : Number(cell.dataset.period);
+      vendors = computeQuarterVendorBreakdown(rowIndex, period, benchmarkKey);
+      threshold = 25;
+    }
+    renderDrillPanel({ title: cell.dataset.label, periodLabel: cell.dataset.periodLabel, benchmarkLabel, vendors, threshold });
+  }
+
+  let drillCtx = null;
+
+  function renderDrillPanel(ctx){
+    drillCtx = Object.assign({ mode:'materiality', threshold:25, search:'' }, ctx);
+    const overlay = ensureDrillPanel();
+    const panel = document.getElementById('drill-panel');
+    panel.innerHTML = `
+      <div class="drill-hdr">
+        <div>
+          <h3>${escapeHtml(ctx.title)}</h3>
+          <div class="drill-sub">${escapeHtml(ctx.periodLabel)} · Working vs ${escapeHtml(ctx.benchmarkLabel)}</div>
+        </div>
+        <button class="drill-close" id="drill-close">&times;</button>
+      </div>
+      <div class="drill-controls">
+        <div class="drill-seg">
+          <button class="drill-seg-btn" data-mode="materiality">By materiality</button>
+          <button class="drill-seg-btn" data-mode="activity" title="With Activity (excluding zero)">With activity</button>
+          <button class="drill-seg-btn" data-mode="all">Show all</button>
+        </div>
+        <div class="drill-thr" id="drill-thr-wrap">
+          <span>±&nbsp;$</span><input type="number" id="drill-thr" min="0" step="5" value="${ctx.threshold}" /><span>K</span>
+        </div>
+      </div>
+      <div class="drill-search" id="drill-search-wrap">
+        <i class="ti ti-search"></i><input type="text" id="drill-search" placeholder="Search vendor by id or name..." value="${escapeHtml(ctx.search||'')}" />
+      </div>
+      <div class="drill-body" id="drill-body"></div>`;
+    panel.querySelector('#drill-close').addEventListener('click', closeDrill);
+    panel.querySelectorAll('.drill-seg-btn').forEach(btn => {
+      btn.addEventListener('click', () => { drillCtx.mode = btn.dataset.mode; renderDrillBody(); });
+    });
+    const thr = panel.querySelector('#drill-thr');
+    if(thr) thr.addEventListener('input', () => {
+      const val = parseFloat(thr.value);
+      drillCtx.threshold = Number.isFinite(val) ? val : 0;
+      if(drillCtx.mode === 'materiality') renderDrillBody();
+    });
+    const search = panel.querySelector('#drill-search');
+    if(search) search.addEventListener('input', () => { drillCtx.search = search.value; if(drillCtx.mode === 'all') renderDrillBody(); });
+    const bodyEl = panel.querySelector('#drill-body');
+    if(bodyEl) bodyEl.addEventListener('click', e => {
+      const btn = e.target.closest('.drill-gl-btn');
+      if(!btn) return;
+      const row = btn.closest('.drill-bar-row');
+      if(!row) return;
+      const open = row.classList.toggle('gl-open');
+      const ic = btn.querySelector('i');
+      if(ic) ic.className = open ? 'ti ti-eye-off' : 'ti ti-eye';
+    });
+    renderDrillBody();
+    overlay.classList.add('show');
+    requestAnimationFrame(() => panel.classList.add('show'));
+  }
+
+  function renderDrillBody(){
+    const panel = document.getElementById('drill-panel');
+    if(!panel || !drillCtx) return;
+    const body = panel.querySelector('#drill-body');
+    panel.querySelectorAll('.drill-seg-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === drillCtx.mode));
+    const thrWrap = panel.querySelector('#drill-thr-wrap');
+    if(thrWrap) thrWrap.style.display = drillCtx.mode === 'materiality' ? 'flex' : 'none';
+    const searchWrap = panel.querySelector('#drill-search-wrap');
+    if(searchWrap) searchWrap.style.display = drillCtx.mode === 'all' ? 'flex' : 'none';
+
+    const all = drillCtx.vendors;
+    const totW = all.reduce((s,v)=>s+v.working,0);
+    const totB = all.reduce((s,v)=>s+v.benchmark,0);
+    const totVar = totW - totB;
+    const util = totB ? Math.round(totW/totB*100) : null;
+
+    const thrAbs = (drillCtx.threshold || 0) * 1000;
+    let shown;
+    if(drillCtx.mode === 'materiality'){
+      shown = all.filter(v => Math.abs(v.variance) >= thrAbs);
+    } else if(drillCtx.mode === 'activity'){
+      shown = all.filter(v => v.working !== 0 || v.benchmark !== 0);
+    } else {
+      shown = all;
+      const q = (drillCtx.search || '').trim().toLowerCase();
+      if(q) shown = shown.filter(v => v.name.toLowerCase().includes(q));
+    }
+    const maxVal = Math.max(1, ...shown.map(v => Math.max(Math.abs(v.working), Math.abs(v.benchmark))));
+
+    const renderBar = v => {
+      const wPct = Math.min(100, Math.abs(v.working)/maxVal*100);
+      const bPct = Math.min(100, Math.abs(v.benchmark)/maxVal*100);
+      const over = v.variance > 0;
+      const vpct = v.benchmark ? ((v.variance>0?'+':'') + Math.round(v.variance/v.benchmark*100) + '%') : (v.working ? 'not in plan' : '—');
+      return `<div class="drill-bar-row">
+        <div class="drill-bar-top">
+          <span class="drill-bar-left"><span class="drill-bar-name">${escapeHtml(v.name)}</span>${v.gl ? '<button class="drill-gl-btn" type="button" title="Show GL account"><i class="ti ti-eye"></i></button>' : ''}</span>
+          <span class="drill-bar-fig">${fmtKplain(v.working)} / ${fmtKplain(v.benchmark)}</span>
+        </div>
+        <div class="drill-track">
+          <div class="drill-fill ${over?'unfav':'fav'}" style="width:${wPct}%"></div>
+          ${v.benchmark ? `<div class="drill-plan-marker" style="left:${bPct}%"></div>` : ''}
+        </div>
+        <div class="drill-util ${over?'var-unfav':'var-fav'}">${escapeHtml(vpct)} vs ${escapeHtml(drillCtx.benchmarkLabel.toLowerCase())} · ${fmtK(v.variance)}</div>
+        ${v.gl ? `<div class="drill-gl-line"><i class="ti ti-receipt-2"></i>GL account · ${escapeHtml(v.gl)}</div>` : ''}
+      </div>`;
+    };
+
+    const unfav = shown.filter(v => v.variance > 0).sort((a,b)=>b.variance - a.variance);
+    const fav = shown.filter(v => v.variance < 0).sort((a,b)=>a.variance - b.variance);
+    const neutral = shown.filter(v => v.variance === 0);
+    const groupHdr = (cls, main, note, count) => `<div class="drill-group-hdr ${cls}"><span class="ghl"><span class="gmain">${main}</span><span class="gnote">(${note})</span></span><span class="gcount">${count}</span></div>`;
+    let bars = '';
+    if(fav.length) bars += groupHdr('fav', 'Favorable', 'Savings', fav.length) + fav.map(renderBar).join('');
+    if(unfav.length) bars += groupHdr('unfav', 'Unfavorable', 'Overspend', unfav.length) + unfav.map(renderBar).join('');
+    if(neutral.length) bars += groupHdr('neu', 'No Variance', 'In line with Plan', neutral.length) + neutral.map(renderBar).join('');
+
+    let countTxt;
+    if(drillCtx.mode === 'materiality'){
+      countTxt = `Showing ${shown.length} of ${all.length} vendors · materiality ± $${drillCtx.threshold}K`;
+    } else if(drillCtx.mode === 'activity'){
+      countTxt = `Showing ${shown.length} of ${all.length} vendors · with activity (excluding zero)`;
+    } else {
+      const q = (drillCtx.search || '').trim();
+      countTxt = q ? `Showing ${shown.length} of ${all.length} vendors · search \"${q}\"` : `Showing all ${all.length} vendors`;
+    }
+
+    body.innerHTML = `
+      <div class="drill-summary">
+        <div class="ds"><div class="k">Working</div><div class="val">${fmtKplain(totW)}</div></div>
+        <div class="ds"><div class="k">${escapeHtml(drillCtx.benchmarkLabel)}</div><div class="val">${fmtKplain(totB)}</div></div>
+        <div class="ds"><div class="k">Variance</div><div class="val ${totVar<0?'kpi-fav':totVar>0?'kpi-unfav':'kpi-neu'}">${fmtK(totVar)}</div></div>
+        <div class="ds"><div class="k">Utilization</div><div class="val">${util===null?'—':util+'%'}</div></div>
+      </div>
+      <div class="drill-count">${escapeHtml(countTxt)}</div>
+      ${shown.length ? bars : `<div class="drill-empty">${drillCtx.mode === 'materiality' ? 'No vendors within this materiality range.' : 'No vendors to display.'}</div>`}`;
   }
 
   function quarterNum(label){ const m = String(label||'').match(/Q\s*([1-4])/i); return m ? parseInt(m[1],10)-1 : -1; }
