@@ -59,48 +59,28 @@
         <span>Required feeds</span>
         <span class="sec-tag">Quarter &amp; Year required · HC, T&amp;E &amp; OPEX optional</span>
       </div>
-      <div class="upload-grid">
-        <label class="upload-card" for="quarter-file">
-          <div class="upload-icon"><i class="ti ti-file-spreadsheet"></i></div>
-          <div class="upload-title">QUARTER</div>
-          <div class="upload-sub">Quarterly OPEX feed</div>
-          <div class="upload-name" id="quarter-name">Choose file</div>
-          <input type="file" id="quarter-file" accept=".xlsx,.xls" hidden />
-        </label>
-        <label class="upload-card" for="year-file">
-          <div class="upload-icon"><i class="ti ti-file-spreadsheet"></i></div>
-          <div class="upload-title">YEAR</div>
-          <div class="upload-sub">Full-year OPEX feed</div>
-          <div class="upload-name" id="year-name">Choose file</div>
-          <input type="file" id="year-file" accept=".xlsx,.xls" hidden />
-        </label>
-        <label class="upload-card" for="hc-file">
-          <div class="upload-icon"><i class="ti ti-file-spreadsheet"></i></div>
-          <div class="upload-title">HC</div>
-          <div class="upload-sub">Headcount feed</div>
-          <div class="upload-name" id="hc-name">Choose file</div>
-          <input type="file" id="hc-file" accept=".xlsx,.xls" hidden />
-        </label>
-        <label class="upload-card" for="te-file">
-          <div class="upload-icon"><i class="ti ti-file-spreadsheet"></i></div>
-          <div class="upload-title">T&amp;E</div>
-          <div class="upload-sub">Travel &amp; expense feed</div>
-          <div class="upload-name" id="te-name">Choose file</div>
-          <input type="file" id="te-file" accept=".xlsx,.xls" hidden />
-        </label>
-        <label class="upload-card" for="opex-file">
-          <div class="upload-icon"><i class="ti ti-file-spreadsheet"></i></div>
-          <div class="upload-title">OPEX</div>
-          <div class="upload-sub">OPEX Feed (optional)</div>
-          <div class="upload-name" id="opex-name">Choose file</div>
-          <input type="file" id="opex-file" accept=".xlsx,.xls" hidden />
-        </label>
+
+      <div class="board-count-bar">
+        <span class="bcb-label"><i class="ti ti-stack-2"></i> How many boards do you want to generate?</span>
+        <div class="board-count-seg" id="board-count-seg">
+          <button type="button" class="bcs-btn active" data-count="1">1</button>
+          <button type="button" class="bcs-btn" data-count="2">2</button>
+          <button type="button" class="bcs-btn" data-count="3">3</button>
+          <button type="button" class="bcs-btn" data-count="4">4</button>
+          <button type="button" class="bcs-btn" data-count="5">5</button>
+        </div>
+        <span class="bcb-hint">Each board opens in its own window.</span>
       </div>
+
+      <div id="board-groups"></div>
+
       <div class="note-strip">
         <div><strong>Generic rules:</strong> labels derive from the current files, not hardcoded BU logic.</div>
         <div><strong>Business model:</strong> negative expense variance is favorable, positive is unfavorable.</div>
       </div>
       <div id="build-errors" class="build-errors"></div>
+
+      <div id="launcher" class="launcher hidden"></div>
     </section>
 
     <div id="dashboard-root" class="hidden"></div>
