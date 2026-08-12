@@ -1076,8 +1076,13 @@
     });
   }
 
-  function stripLiveScripts(clone){
-    clone.querySelectorAll('script[src]').forEach(s => s.remove());
+  function stripLiveScripts(clone, keepPatterns){
+    const keep = keepPatterns || [];
+    clone.querySelectorAll('script[src]').forEach(s => {
+      const src = s.getAttribute('src') || '';
+      const shouldKeep = keep.some(p => src.indexOf(p) !== -1);
+      if(!shouldKeep) s.remove();
+    });
   }
 
   function buildExportScript(){
@@ -1125,7 +1130,10 @@
   }
 
   // Build a fully self-contained HTML string for the currently rendered board.
-  async function buildStandaloneHtml(){
+  // opts.interactive === true keeps Save / Download / add-line / trash controls
+  // live inside the exported window (used for multi-board windows).
+  async function buildStandaloneHtml(opts){
+    const interactive = !!(opts && opts.interactive);
     const cssText = await fetchInlineCss();
     // Persist current field values into the DOM so the clone captures typed text.
     document.querySelectorAll('#dashboard-root textarea').forEach(t => { t.textContent = t.value; });
@@ -1134,13 +1142,64 @@
       else { i.setAttribute('value', i.value); }
     });
     const clone = document.documentElement.cloneNode(true);
-    clone.querySelectorAll('.hidden, .del-btn, .del-block, .add-act, .mini-btn, .ghost-btn, .topbar-actions, #save-nav, #download-nav, #download-pdf-nav, #back-nav, #home-nav, #drill-overlay, #upload-shell').forEach(el => el.remove());
-    freezeCanvasesAsImages(clone);
-    stripLiveScripts(clone);
-    inlineCssIntoClone(clone, cssText);
-    appendExportScript(clone);
-    appendDrillExportScript(clone);
+
+    if(interactive){
+      // Keep interactive controls; only remove things that make no sense in a
+      // standalone window (workspace navigation, uploader, batch UI, open drill).
+      clone.querySelectorAll('#back-nav, #home-nav, #budget-util-nav, .topbar-actions, #upload-shell, #drill-overlay').forEach(el => el.remove());
+      freezeCanvasesAsImages(clone);
+      stripLiveScripts(clone, ['html2canvas', 'jspdf']); // keep PDF libs for in-window export
+      inlineCssIntoClone(clone, cssText);
+      appendInteractiveScript(clone);
+      appendDrillExportScript(clone);
+    } else {
+      clone.querySelectorAll('.hidden, .del-btn, .del-block, .add-act, .mini-btn, .ghost-btn, .topbar-actions, #save-nav, #download-nav, #download-pdf-nav, #back-nav, #home-nav, #drill-overlay, #upload-shell').forEach(el => el.remove());
+      freezeCanvasesAsImages(clone);
+      stripLiveScripts(clone);
+      inlineCssIntoClone(clone, cssText);
+      appendExportScript(clone);
+      appendDrillExportScript(clone);
+    }
     return '<!DOCTYPE html>\n' + clone.outerHTML;
+  }
+
+  // Inject the self-contained interactive bootstrap (Save / Download HTML /
+  // Download PDF / add comment / add action / delete row+block / nav+scrollspy).
+  function appendInteractiveScript(clone){
+    const script = document.createElement('script');
+    script.textContent = buildInteractiveBootstrap(storageKey(), exportFileBase());
+    const body = clone.querySelector('body');
+    if(body) body.appendChild(script);
+  }
+
+  // Returns a vanilla, dependency-free IIFE string that re-wires every editable
+  // control inside an exported window. STORAGE_KEY / FILE_BASE are baked in so
+  // each board window persists to its own localStorage slot.
+  function buildInteractiveBootstrap(storageKeyStr, fileBaseStr){
+    const KEY = JSON.stringify(storageKeyStr);
+    const FILE = JSON.stringify(fileBaseStr);
+    return '(function(){\n'
+      + 'var STORAGE_KEY=' + KEY + ',FILE_BASE=' + FILE + ';\n'
+      + 'function slug(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");}\n'
+      + 'function escapeHtml(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}\n'
+      + 'function cssEscape(s){return String(s).replace(/"/g,\'\\"\');}\n'
+      + 'function autoResize(el){if(!el||el.tagName!=="TEXTAREA")return;el.style.height="auto";el.style.height=el.scrollHeight+"px";}\n'
+      + 'function toast(m){var t=document.getElementById("toast");if(!t){t=document.createElement("div");t.id="toast";t.className="toast";document.body.appendChild(t);}t.textContent=m;t.classList.add("show");setTimeout(function(){t.classList.remove("show");},1800);}\n'
+      + 'function updateActionCounter(){var items=Array.prototype.slice.call(document.querySelectorAll(".act-item")).filter(function(el){return !el.classList.contains("hidden");});var done=items.filter(function(el){var cb=el.querySelector(".act-cb");return cb&&cb.checked;}).length;var ctr=document.getElementById("actCtr");if(ctr)ctr.textContent=done+" of "+items.length+" completed";}\n'
+      + 'function saveState(silent){var p={comments:{},actions:{},hidden:[]};document.querySelectorAll("[data-persist]").forEach(function(el){p.comments[el.dataset.persist]=el.value;});document.querySelectorAll("[data-act-cb]").forEach(function(cb){p.actions[cb.dataset.actCb]=cb.checked;});document.querySelectorAll(".hidden[id]").forEach(function(el){p.hidden.push(el.id);});try{localStorage.setItem(STORAGE_KEY,JSON.stringify(p));}catch(e){}updateActionCounter();if(!silent)toast("Board saved");}\n'
+      + 'function restoreSavedState(){var raw;try{raw=localStorage.getItem(STORAGE_KEY);}catch(e){}if(!raw)return;try{var p=JSON.parse(raw);Object.keys(p.comments||{}).forEach(function(k){var el=document.querySelector("[data-persist=\\""+cssEscape(k)+"\\"]");if(el){el.value=p.comments[k];autoResize(el);}});Object.keys(p.actions||{}).forEach(function(k){var cb=document.querySelector("[data-act-cb=\\""+cssEscape(k)+"\\"]");if(cb)cb.checked=!!p.actions[k];});(p.hidden||[]).forEach(function(id){var el=document.getElementById(id);if(el)el.classList.add("hidden");});updateActionCounter();}catch(e){}}\n'
+      + 'function addCommentRow(blockId){var input=document.querySelector("[data-add-input=\\""+blockId+"\\"]");var text=input?input.value.trim():"";var rowId=slug(blockId+"-"+Date.now());var row=document.createElement("div");row.className="comment-row";row.id=rowId+"-row";row.innerHTML="<textarea class=\\"vedit\\" rows=\\"2\\" data-persist=\\"comment:"+rowId+"\\">"+escapeHtml(text)+"</textarea><button class=\\"del-btn\\" data-del-row=\\""+rowId+"\\"><i class=\\"ti ti-trash\\"></i></button>";var addWrap=input.closest(".inline-add");addWrap.parentNode.insertBefore(row,addWrap);var ta=row.querySelector("textarea");ta.addEventListener("input",function(){autoResize(ta);saveState(true);});autoResize(ta);if(input)input.value="";saveState(true);}\n'
+      + 'function addAction(){var list=document.getElementById("actList");if(!list)return;var id="act-"+Date.now();var div=document.createElement("div");div.className="act-item";div.id=id;div.innerHTML="<input type=\\"checkbox\\" class=\\"act-cb\\" data-act-cb=\\""+id+"\\"><textarea class=\\"act-text\\" rows=\\"1\\" data-persist=\\"action:"+id+"\\" placeholder=\\"New action item...\\"></textarea><button class=\\"del-btn\\" data-del-row=\\""+id+"\\"><i class=\\"ti ti-trash\\"></i></button>";list.appendChild(div);div.querySelector("[data-act-cb]").addEventListener("change",function(){saveState(true);});var ta=div.querySelector("textarea");ta.addEventListener("input",function(){autoResize(ta);saveState(true);});autoResize(ta);updateActionCounter();saveState(true);}\n'
+      + 'function downloadHtml(){try{document.querySelectorAll("textarea").forEach(function(t){t.textContent=t.value;});document.querySelectorAll("input").forEach(function(i){if(i.type==="checkbox"){if(i.checked)i.setAttribute("checked","checked");else i.removeAttribute("checked");}else{i.setAttribute("value",i.value);}});var clone=document.documentElement.cloneNode(true);clone.querySelectorAll("#toast").forEach(function(el){el.remove();});var html="<!DOCTYPE html>\\n"+clone.outerHTML;var blob=new Blob([html],{type:"text/html"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=FILE_BASE+".html";a.click();URL.revokeObjectURL(a.href);toast("HTML downloaded");}catch(e){console.error(e);toast("Could not export HTML");}}\n'
+      + 'function downloadPdf(){if(typeof html2canvas==="undefined"||!window.jspdf){toast("PDF libraries did not load");return;}saveState(true);var target=document.querySelector(".main-workspace");if(!target){toast("Could not find dashboard content");return;}var hiddenEls=Array.prototype.slice.call(target.querySelectorAll(".hidden, .del-btn, .del-block, .add-act, .mini-btn, .ghost-btn, .topbar-actions, #back-nav, #home-nav"));var restore=hiddenEls.map(function(el){return [el,el.style.display];});var aside=document.querySelector("aside");var asideDisplay=aside?aside.style.display:null;var prevML=target.style.marginLeft,prevW=target.style.width;toast("Building PDF...");hiddenEls.forEach(function(el){el.style.display="none";});if(aside)aside.style.display="none";target.style.marginLeft="0";target.style.width="100%";setTimeout(function(){html2canvas(target,{scale:2,useCORS:true,backgroundColor:"#f8fafc"}).then(function(canvas){var jsPDF=window.jspdf.jsPDF;var pdf=new jsPDF("p","pt","a4");var pageWidth=pdf.internal.pageSize.getWidth();var pageHeight=pdf.internal.pageSize.getHeight();var ratio=canvas.width/pageWidth;var pageHeightPx=Math.max(1,Math.floor(pageHeight*ratio));var rendered=0,first=true;while(rendered<canvas.height){var sh=Math.min(pageHeightPx,canvas.height-rendered);var sc=document.createElement("canvas");sc.width=canvas.width;sc.height=sh;sc.getContext("2d").drawImage(canvas,0,rendered,canvas.width,sh,0,0,canvas.width,sh);var img=sc.toDataURL("image/jpeg",0.92);if(!first)pdf.addPage();pdf.addImage(img,"JPEG",0,0,pageWidth,sh/ratio);rendered+=sh;first=false;}pdf.save(FILE_BASE+".pdf");toast("PDF downloaded");}).catch(function(e){console.error(e);toast("Could not export PDF");}).then(function(){restore.forEach(function(pr){pr[0].style.display=pr[1];});if(aside)aside.style.display=asideDisplay;target.style.marginLeft=prevML;target.style.width=prevW;});},60);}\n'
+      + 'function navTo(sectionId,el){var t=document.getElementById(sectionId);if(!t)return;var top=t.getBoundingClientRect().top+window.scrollY-20;window.scrollTo({top:top,behavior:"smooth"});document.querySelectorAll("aside nav ul li[data-nav]").forEach(function(li){li.classList.remove("active");});if(el)el.classList.add("active");}\n'
+      + 'function scrollSpy(){var sections=["sec-overview","sec-qplan","sec-qfcst","sec-fyplan","sec-fyfcst","sec-te","sec-hc","sec-actions"];var navItems=document.querySelectorAll("aside nav ul li[data-nav]");var sy=window.scrollY+80;var current=0;sections.forEach(function(id,i){var el=document.getElementById(id);if(el&&el.offsetTop<=sy)current=i;});navItems.forEach(function(li){li.classList.remove("active");});if(navItems[current])navItems[current].classList.add("active");}\n'
+      + 'document.body.addEventListener("click",function(e){var t=e.target;if(!t.closest)return;var dr=t.closest("[data-del-row]");if(dr){var id=dr.dataset.delRow;var row=document.getElementById(id+"-row")||document.getElementById(id);if(row)row.classList.add("hidden");saveState(true);updateActionCounter();return;}var db=t.closest("[data-del-block]");if(db){var w=document.getElementById(db.dataset.delBlock+"-wrap");if(w)w.classList.add("hidden");saveState(true);return;}var ac=t.closest("[data-add-comment]");if(ac){addCommentRow(ac.dataset.addComment);return;}if(t.closest("#add-act")){addAction();return;}if(t.closest("#save-nav")){saveState();return;}if(t.closest("#download-nav")){downloadHtml();return;}if(t.closest("#download-pdf-nav")){downloadPdf();return;}var nav=t.closest("aside nav ul li[data-nav]");if(nav){navTo(nav.dataset.nav,nav);return;}});\n'
+      + 'document.querySelectorAll("[data-persist]").forEach(function(el){el.addEventListener("input",function(){autoResize(el);saveState(true);});});\n'
+      + 'document.querySelectorAll("[data-act-cb]").forEach(function(cb){cb.addEventListener("change",function(){saveState(true);});});\n'
+      + 'window.addEventListener("scroll",scrollSpy,{passive:true});\n'
+      + 'restoreSavedState();updateActionCounter();document.querySelectorAll("textarea").forEach(autoResize);\n'
+      + '})();';
   }
 
   async function downloadHtml(){
@@ -1213,7 +1272,7 @@
         dom.root.classList.remove('hidden');
         // Let charts paint before snapshotting.
         await new Promise(r => setTimeout(r, 550));
-        const html = await buildStandaloneHtml();
+        const html = await buildStandaloneHtml({ interactive:true });
         state.generated.push({
           title: model.meta.dashboardCode,
           subtitle: `${model.meta.monthToken} ${model.meta.fyToken} · ${model.meta.currentQuarterLabel}`,
