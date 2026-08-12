@@ -4,7 +4,10 @@
   const state = {
     files: { quarter:null, year:null, hc:null, te:null, opex:null },
     model: null,
-    edits: {}
+    edits: {},
+    boardCount: 1,
+    boards: [],          // per-board file sets: [{quarter,year,hc,te,opex}, ...]
+    generated: []        // built standalone boards: [{title, subtitle, fileBase, html}, ...]
   };
   const chartRefs = {};
   let REVIEW_MONTH_IDX = -1, REVIEW_Q_IDX = -1;
@@ -12,11 +15,6 @@
   const monthOrder = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const fiscalOrder = ['Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan'];
   const dom = {
-    quarterFile: document.getElementById('quarter-file'),
-    yearFile: document.getElementById('year-file'),
-    hcFile: document.getElementById('hc-file'),
-    teFile: document.getElementById('te-file'),
-    opexFile: document.getElementById('opex-file'),
     budgetUtilNav: document.getElementById('budget-util-nav'),
     buildBtn: document.getElementById('build-btn'),
     resetBtn: document.getElementById('reset-btn'),
@@ -24,27 +22,113 @@
     homeNav: document.getElementById('home-nav'),
     errors: document.getElementById('build-errors'),
     root: document.getElementById('dashboard-root'),
-    sidebarFooter: document.getElementById('sidebar-footer')
+    sidebarFooter: document.getElementById('sidebar-footer'),
+    boardCountSeg: document.getElementById('board-count-seg'),
+    boardGroups: document.getElementById('board-groups'),
+    launcher: document.getElementById('launcher')
   };
 
-  const uploadMap = [
-    ['quarter', dom.quarterFile, 'quarter-name'],
-    ['year', dom.yearFile, 'year-name'],
-    ['hc', dom.hcFile, 'hc-name'],
-    ['te', dom.teFile, 'te-name'],
-    ['opex', dom.opexFile, 'opex-name']
+  const FEED_DEFS = [
+    { key:'quarter', title:'QUARTER', sub:'Quarterly OPEX feed' },
+    { key:'year',    title:'YEAR',    sub:'Full-year OPEX feed' },
+    { key:'hc',      title:'HC',      sub:'Headcount feed' },
+    { key:'te',      title:'T&E',     sub:'Travel & expense feed' },
+    { key:'opex',    title:'OPEX',    sub:'OPEX Feed (optional)' }
   ];
 
-  uploadMap.forEach(([key, input, labelId]) => {
-    input.addEventListener('change', e => {
-      const file = e.target.files[0] || null;
-      state.files[key] = file;
-      const label = document.getElementById(labelId);
-      label.textContent = file ? file.name : 'Choose file';
-      input.closest('.upload-card').classList.toggle('loaded', !!file);
-      updateBuildButton();
+  // ---------- Dynamic multi-board upload groups ----------
+  function emptyFiles(){ return { quarter:null, year:null, hc:null, te:null, opex:null }; }
+
+  function ensureBoards(count){
+    while(state.boards.length < count) state.boards.push(emptyFiles());
+    state.boards.length = count;
+  }
+
+  function boardGroupHtml(boardIdx, single){
+    const cards = FEED_DEFS.map(def => {
+      const id = `b${boardIdx}-${def.key}-file`;
+      const nameId = `b${boardIdx}-${def.key}-name`;
+      return `<label class="upload-card" for="${id}">
+        <div class="upload-icon"><i class="ti ti-file-spreadsheet"></i></div>
+        <div class="upload-title">${def.title}</div>
+        <div class="upload-sub">${def.sub}</div>
+        <div class="upload-name" id="${nameId}">Choose file</div>
+        <input type="file" id="${id}" accept=".xlsx,.xls" hidden data-board="${boardIdx}" data-feed="${def.key}" />
+      </label>`;
+    }).join('');
+    const legend = single
+      ? ''
+      : `<div class="board-legend"><span class="bg-num">Board ${boardIdx+1}</span><span class="bg-tag" id="bg-tag-${boardIdx}">Awaiting Quarter &amp; Year</span></div>`;
+    return `<div class="board-group${single?' single':''}" data-board="${boardIdx}">${legend}<div class="upload-grid">${cards}</div></div>`;
+  }
+
+  function renderBoardGroups(){
+    const count = state.boardCount;
+    ensureBoards(count);
+    const single = count === 1;
+    dom.boardGroups.innerHTML = state.boards.map((_, i) => boardGroupHtml(i, single)).join('');
+    dom.boardGroups.querySelectorAll('input[type="file"]').forEach(input => {
+      input.addEventListener('change', onFeedChange);
     });
-  });
+    // Re-hydrate labels from any retained state.
+    state.boards.forEach((files, i) => {
+      FEED_DEFS.forEach(def => {
+        const f = files[def.key];
+        const label = document.getElementById(`b${i}-${def.key}-name`);
+        if(label) label.textContent = f ? f.name : 'Choose file';
+        const input = document.getElementById(`b${i}-${def.key}-file`);
+        if(input) input.closest('.upload-card').classList.toggle('loaded', !!f);
+      });
+      updateBoardTag(i);
+    });
+    updateBuildButton();
+  }
+
+  function onFeedChange(e){
+    const input = e.target;
+    const boardIdx = Number(input.dataset.board);
+    const feed = input.dataset.feed;
+    const file = input.files[0] || null;
+    if(!state.boards[boardIdx]) state.boards[boardIdx] = emptyFiles();
+    state.boards[boardIdx][feed] = file;
+    const label = document.getElementById(`b${boardIdx}-${feed}-name`);
+    if(label) label.textContent = file ? file.name : 'Choose file';
+    input.closest('.upload-card').classList.toggle('loaded', !!file);
+    updateBoardTag(boardIdx);
+    updateBuildButton();
+  }
+
+  function updateBoardTag(boardIdx){
+    const tag = document.getElementById(`bg-tag-${boardIdx}`);
+    if(!tag) return;
+    const files = state.boards[boardIdx] || {};
+    if(files.quarter && files.year){
+      let meta = null;
+      try{ meta = parseMeta(files.quarter.name); }catch(e){}
+      tag.textContent = meta ? `${meta.dashboardCode} · ${meta.monthToken} ${meta.fyToken}` : 'Ready';
+      tag.classList.add('ready');
+    } else {
+      tag.textContent = 'Awaiting Quarter & Year';
+      tag.classList.remove('ready');
+    }
+  }
+
+  function setBoardCount(count){
+    state.boardCount = count;
+    if(dom.boardCountSeg){
+      dom.boardCountSeg.querySelectorAll('.bcs-btn').forEach(b => b.classList.toggle('active', Number(b.dataset.count) === count));
+    }
+    if(dom.launcher){ dom.launcher.classList.add('hidden'); dom.launcher.innerHTML = ''; }
+    state.generated = [];
+    renderBoardGroups();
+  }
+
+  if(dom.boardCountSeg){
+    dom.boardCountSeg.querySelectorAll('.bcs-btn').forEach(btn => {
+      btn.addEventListener('click', () => setBoardCount(Number(btn.dataset.count)));
+    });
+  }
+  renderBoardGroups();
 
   document.getElementById('save-nav').addEventListener('click', saveState);
   document.getElementById('download-nav').addEventListener('click', downloadHtml);
@@ -52,15 +136,20 @@
   if(pdfNav) pdfNav.addEventListener('click', downloadPdf);
   if(dom.backNav) dom.backNav.addEventListener('click', backToWorkspace);
   dom.resetBtn.addEventListener('click', resetAll);
-  dom.buildBtn.addEventListener('click', buildDashboard);
+  dom.buildBtn.addEventListener('click', onGenerate);
   document.querySelectorAll('aside nav ul li[data-nav]').forEach(li => {
     li.addEventListener('click', () => navTo(li.dataset.nav, li));
   });
   if(dom.budgetUtilNav) dom.budgetUtilNav.addEventListener('click', openBudgetUtilization);
 
   function updateBuildButton(){
-    const ready = !!(state.files.quarter && state.files.year);
+    ensureBoards(state.boardCount);
+    const ready = state.boards.length > 0 && state.boards.every(f => f && f.quarter && f.year);
     dom.buildBtn.disabled = !ready;
+    if(dom.buildBtn){
+      const lbl = state.boardCount > 1 ? `Generate ${state.boardCount} Boards` : 'Generate Board';
+      dom.buildBtn.innerHTML = `<i class="ti ti-wand"></i> ${lbl}`;
+    }
   }
 
   function showError(msg){ dom.errors.textContent = msg || ''; }
@@ -75,22 +164,19 @@
     state.model = null;
     state.edits = {};
     state.files = { quarter:null, year:null, hc:null, te:null, opex:null };
+    state.boards = [];
+    state.generated = [];
     dom.root.innerHTML = '';
     dom.root.classList.add('hidden');
     if(dom.backNav) dom.backNav.classList.add('hidden');
     if(dom.homeNav) dom.homeNav.classList.remove('hidden');
     if(dom.budgetUtilNav) dom.budgetUtilNav.classList.add('hidden');
+    if(dom.launcher){ dom.launcher.classList.add('hidden'); dom.launcher.innerHTML = ''; }
     showError('');
     document.getElementById('upload-shell').classList.remove('hidden');
     dom.sidebarFooter.textContent = 'Upload Quarter and Year feeds to generate a board (HC and T&E optional).';
     document.querySelectorAll('aside nav ul li').forEach((li, idx) => li.classList.toggle('active', idx===0));
-    uploadMap.forEach(([key, input, labelId]) => {
-      input.value = '';
-      const label = document.getElementById(labelId);
-      if(label) label.textContent = 'Choose file';
-      const card = input.closest('.upload-card');
-      if(card) card.classList.remove('loaded');
-    });
+    setBoardCount(1);
     updateBuildButton();
   }
 
@@ -105,12 +191,12 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  async function buildDashboard(){
+  async function buildDashboard(files){
     try{
       showError('');
       dom.buildBtn.disabled = true;
       dom.buildBtn.innerHTML = '<i class="ti ti-loader-2"></i> Building...';
-      const parsed = await parseFiles(state.files);
+      const parsed = await parseFiles(files || state.boards[0] || state.files);
       const model = deriveModel(parsed);
       state.model = model;
       renderDashboard(model);
@@ -1038,27 +1124,32 @@
     if(body) body.appendChild(script);
   }
 
+  // Build a fully self-contained HTML string for the currently rendered board.
+  async function buildStandaloneHtml(){
+    const cssText = await fetchInlineCss();
+    // Persist current field values into the DOM so the clone captures typed text.
+    document.querySelectorAll('#dashboard-root textarea').forEach(t => { t.textContent = t.value; });
+    document.querySelectorAll('#dashboard-root input').forEach(i => {
+      if(i.type === 'checkbox'){ if(i.checked) i.setAttribute('checked','checked'); else i.removeAttribute('checked'); }
+      else { i.setAttribute('value', i.value); }
+    });
+    const clone = document.documentElement.cloneNode(true);
+    clone.querySelectorAll('.hidden, .del-btn, .del-block, .add-act, .mini-btn, .ghost-btn, .topbar-actions, #save-nav, #download-nav, #download-pdf-nav, #back-nav, #home-nav, #drill-overlay, #upload-shell').forEach(el => el.remove());
+    freezeCanvasesAsImages(clone);
+    stripLiveScripts(clone);
+    inlineCssIntoClone(clone, cssText);
+    appendExportScript(clone);
+    appendDrillExportScript(clone);
+    return '<!DOCTYPE html>\n' + clone.outerHTML;
+  }
+
   async function downloadHtml(){
     if(!state.model){ toast('Build a dashboard first'); return; }
     saveState();
     const nav = document.getElementById('download-nav');
     try{
       if(nav) nav.classList.add('disabled-nav');
-      const cssText = await fetchInlineCss();
-      // Persist current field values into the DOM so the clone captures typed text.
-      document.querySelectorAll('#dashboard-root textarea').forEach(t => { t.textContent = t.value; });
-      document.querySelectorAll('#dashboard-root input').forEach(i => {
-        if(i.type === 'checkbox'){ if(i.checked) i.setAttribute('checked','checked'); else i.removeAttribute('checked'); }
-        else { i.setAttribute('value', i.value); }
-      });
-      const clone = document.documentElement.cloneNode(true);
-      clone.querySelectorAll('.hidden, .del-btn, .del-block, .add-act, .mini-btn, .ghost-btn, .topbar-actions, #save-nav, #download-nav, #download-pdf-nav, #back-nav, #home-nav, #drill-overlay').forEach(el => el.remove());
-      freezeCanvasesAsImages(clone);
-      stripLiveScripts(clone);
-      inlineCssIntoClone(clone, cssText);
-      appendExportScript(clone);
-      appendDrillExportScript(clone);
-      const html = '<!DOCTYPE html>\n' + clone.outerHTML;
+      const html = await buildStandaloneHtml();
       const blob = new Blob([html], { type:'text/html' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -1071,6 +1162,118 @@
       toast('Could not export HTML');
     }finally{
       if(nav) nav.classList.remove('disabled-nav');
+    }
+  }
+
+  // ---------- Multi-board generation ----------
+  async function onGenerate(){
+    showError('');
+    if(dom.launcher){ dom.launcher.classList.add('hidden'); dom.launcher.innerHTML = ''; }
+    if(state.boardCount === 1){
+      await buildDashboard(state.boards[0]);
+      return;
+    }
+    await buildAllBoards();
+  }
+
+  // Validate BU+month uniqueness across boards. Returns an error string or null.
+  function validateBoardKeys(){
+    const seen = new Map();
+    for(let i = 0; i < state.boards.length; i++){
+      const files = state.boards[i];
+      let meta = null;
+      try{ meta = parseMeta(files.quarter.name); }catch(e){}
+      if(!meta){ return `Board ${i+1}: could not read the business unit/month from the Quarter filename.`; }
+      const key = slug(meta.dashboardCode) + '|' + slug(meta.monthToken) + '|' + slug(meta.fyToken);
+      if(seen.has(key)){
+        const other = seen.get(key) + 1;
+        return `Boards ${other} and ${i+1} are the same board (${meta.dashboardCode} · ${meta.monthToken} ${meta.fyToken}). Use a different business unit, or the same BU with a different month.`;
+      }
+      seen.set(key, i);
+    }
+    return null;
+  }
+
+  async function buildAllBoards(){
+    const err = validateBoardKeys();
+    if(err){ showError(err); toast('Duplicate board detected'); return; }
+
+    dom.buildBtn.disabled = true;
+    const originalLabel = dom.buildBtn.innerHTML;
+    state.generated = [];
+    try{
+      for(let i = 0; i < state.boards.length; i++){
+        dom.buildBtn.innerHTML = `<i class="ti ti-loader-2"></i> Building ${i+1} / ${state.boards.length}...`;
+        const parsed = await parseFiles(state.boards[i]);
+        const model = deriveModel(parsed);
+        state.model = model;
+        renderDashboard(model);
+        restoreSavedState();
+        document.getElementById('upload-shell').classList.add('hidden');
+        dom.root.classList.remove('hidden');
+        // Let charts paint before snapshotting.
+        await new Promise(r => setTimeout(r, 550));
+        const html = await buildStandaloneHtml();
+        state.generated.push({
+          title: model.meta.dashboardCode,
+          subtitle: `${model.meta.monthToken} ${model.meta.fyToken} · ${model.meta.currentQuarterLabel}`,
+          fileBase: exportFileBase(),
+          html
+        });
+      }
+      // Return to the upload shell and show launcher buttons.
+      dom.root.classList.add('hidden');
+      dom.root.innerHTML = '';
+      state.model = null;
+      document.getElementById('upload-shell').classList.remove('hidden');
+      if(dom.backNav) dom.backNav.classList.add('hidden');
+      if(dom.homeNav) dom.homeNav.classList.remove('hidden');
+      renderLauncher();
+      toast(`${state.generated.length} boards ready`);
+    }catch(e){
+      console.error(e);
+      showError(e.message || 'Could not build one of the boards. Check the feeds and try again.');
+    }finally{
+      dom.buildBtn.disabled = false;
+      updateBuildButton();
+    }
+  }
+
+  function renderLauncher(){
+    if(!dom.launcher) return;
+    const cards = state.generated.map((g, i) => `
+      <button type="button" class="launch-btn" data-launch="${i}">
+        <span class="lb-ic"><i class="ti ti-external-link"></i></span>
+        <span class="lb-body">
+          <span class="lb-title">Open Board ${i+1}</span>
+          <span class="lb-sub">${escapeHtml(g.title)} · ${escapeHtml(g.subtitle)}</span>
+        </span>
+      </button>`).join('');
+    dom.launcher.innerHTML = `
+      <div class="launcher-hdr"><i class="ti ti-circle-check"></i> ${state.generated.length} boards generated — open each in its own window</div>
+      <div class="launch-grid">${cards}</div>
+      <div class="launcher-note">Each button opens one window. If a window doesn't appear, allow pop-ups for this site and click again.</div>`;
+    dom.launcher.classList.remove('hidden');
+    dom.launcher.querySelectorAll('[data-launch]').forEach(btn => {
+      btn.addEventListener('click', () => openGeneratedBoard(Number(btn.dataset.launch), btn));
+    });
+    dom.launcher.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  function openGeneratedBoard(index, btn){
+    const g = state.generated[index];
+    if(!g){ toast('Board not found'); return; }
+    const w = window.open('', '_blank');
+    if(!w){ toast('Pop-up blocked — allow pop-ups and click again'); return; }
+    try{
+      w.document.open();
+      w.document.write(g.html);
+      w.document.close();
+      w.document.title = `${g.title} — ${g.subtitle}`;
+      if(btn){ btn.classList.add('opened'); }
+    }catch(e){
+      console.error(e);
+      toast('Could not open the board window');
     }
   }
 
