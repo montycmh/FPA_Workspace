@@ -199,15 +199,50 @@
     }
     .back-link:hover {
       transform: translateY(-1px);
-      background: var(--artifact-accent-strong);
-      color: var(--artifact-topbar-text);
-      border-color: var(--artifact-accent-strong);
-      box-shadow: 0 10px 24px color-mix(in srgb, var(--artifact-accent-strong) 28%, transparent);
     }
-    .back-link:focus-visible {
-      outline: 2px solid var(--artifact-accent-soft);
-      outline-offset: 2px;
+    .board-tabs {
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      border-top: 1px solid var(--artifact-neutral-border);
+      padding-top: 12px;
     }
+    .board-tabs.is-visible { display: flex; }
+    .board-tab {
+      border: 1px solid var(--artifact-neutral-border);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--artifact-topbar-muted);
+      padding: 8px 14px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background .16s ease, color .16s ease, border-color .16s ease, transform .16s ease;
+    }
+    .board-tab:hover { transform: translateY(-1px); background: var(--artifact-card-hover); }
+    .board-tab.is-active {
+      background: var(--artifact-topbar-text);
+      color: var(--artifact-topbar);
+      border-color: var(--artifact-topbar-text);
+    }
+    .board-tab .tab-count {
+      min-width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      padding: 0 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      background: rgba(255,255,255,.14);
+      color: inherit;
+    }
+    .board-tab.is-active .tab-count { background: color-mix(in srgb, var(--artifact-topbar) 12%, transparent); }
     .button,
     .secondary-button,
     .ghost-button {
@@ -320,9 +355,15 @@
     .intro-copy { color: var(--artifact-text-secondary); font-size: 14px; }
     .upload-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(280px, 1fr));
+      grid-template-columns: 1fr;
       gap: 16px;
       padding: 18px;
+    }
+    .opex-slots {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(280px, 1fr));
+      gap: 16px;
+      padding: 0 18px 6px;
     }
     .upload-card {
       border: .5px solid var(--artifact-border-light);
@@ -335,16 +376,27 @@
     }
     .upload-card h4 { margin: 0; font-size: 16px; }
     .upload-card p { margin: 0; color: var(--artifact-text-secondary); font-size: 13px; line-height: 1.45; }
-    .upload-card:hover { border-color: #1D9E75; background: #E1F5EE; }
+    .slot-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .slot-head h4 { margin: 0; }
+    .board-name-input {
+      width: 100%;
+      border: .5px solid var(--artifact-border-light);
+      background: var(--artifact-background);
+      color: var(--artifact-text-primary);
+      border-radius: 8px;
+      padding: 8px 11px;
+    }
+    .board-name-input::placeholder { color: var(--artifact-text-secondary); font-style: italic; }
     .file-meta { font-size: 13px; color: var(--artifact-text-secondary); min-height: 18px; }
     .picker { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
     .hidden-input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+    .add-opex-wrap { padding: 0 18px 4px; }
     .load-actions {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
-      padding: 0 18px 18px;
+      padding: 12px 18px 18px;
       flex-wrap: wrap;
     }
     .status-text { font-size: 13px; color: var(--artifact-text-secondary); }
@@ -626,6 +678,16 @@
     .transactions-table td { font-size: 12px; padding: 10px; border-bottom: 1px solid var(--artifact-border-light); vertical-align: top; }
     .transactions-table .last-month { background: var(--artifact-positive-background); color: var(--artifact-positive-text); }
     .muted { color: var(--artifact-text-secondary); }
+    .freq-caption { font-size: 12px; margin-top: 8px; line-height: 1.4; opacity: .92; }
+    .freq-list { margin-top: 10px; display: grid; gap: 6px; }
+    .freq-row { display: grid; grid-template-columns: minmax(0,1fr) 72px auto; gap: 10px; align-items: center; font-size: 12px; }
+    .freq-key { overflow-wrap: anywhere; }
+    .freq-bar { height: 8px; border-radius: 999px; background: color-mix(in srgb, currentColor 16%, transparent); overflow: hidden; }
+    .freq-bar > span { display: block; height: 100%; background: currentColor; border-radius: 999px; }
+    .freq-count { font-variant-numeric: tabular-nums; white-space: nowrap; opacity: .85; }
+    .freq-row.is-pick .freq-key { font-weight: 800; }
+    .freq-more { font-size: 11px; opacity: .7; margin-top: 2px; }
+    .is-hidden { display: none !important; }
     .visually-hidden {
       position: absolute;
       width: 1px;
@@ -644,7 +706,7 @@
     }
 
     @media screen and (max-width: 900px) {
-      .upload-grid,
+      .opex-slots,
       .pattern-list,
       .modal-grid,
       .recommendation-grid { grid-template-columns: 1fr; }
@@ -674,8 +736,7 @@
       .secondary-button,
       .topbar-actions,
       #build-board,
-      #pick-opex,
-      #pick-gl {
+      #add-opex {
         display: none !important;
       }
       .main {
@@ -696,13 +757,13 @@
   </style>
 </head>
 <body>
-  <header class="topbar">
+  <header class="topbar" data-glean-id="topbar">
     <div class="topbar-row">
-      <div class="brand-block">
+      <div class="brand-block" data-glean-id="brand-block">
         <div class="brand-title">OPEX Review Board</div>
-        <div class="brand-subtitle" id="brand-subtitle">Upload an OPEX workbook and a GL Transaction Summary workbook · Excl. Comp and Benefits · by MONTY</div>
+        <div class="brand-subtitle" id="brand-subtitle">Upload one shared GL Transaction Summary and up to 5 OPEX workbooks · Excl. Comp and Benefits · by MONTY</div>
       </div>
-      <div class="filter-strip" id="filter-strip">
+      <div class="filter-strip" id="filter-strip" data-glean-id="filter-strip">
         <button class="filter-card is-active" data-filter="all" type="button">
           <span class="label">All</span>
           <span class="value" id="count-all">0</span>
@@ -722,13 +783,15 @@
       </div>
       <div class="topbar-actions">
         <a class="back-link" href="../" aria-label="Back to Launchpad" title="Back to Launchpad">&#8592;</a>
+        <button class="ghost-button is-hidden" id="manage-files" type="button">Load / Manage files</button>
         <button class="ghost-button" id="print-board" type="button">Print / Save as PDF</button>
         <div class="status-block">
-          <span class="label">Last Actual Loaded</span>
+          <span class="label">Active Board · Last Actual</span>
           <span class="value" id="last-actual-loaded">—</span>
         </div>
       </div>
     </div>
+    <div class="board-tabs" id="board-tabs" data-glean-id="board-tabs"></div>
   </header>
 
   <main class="main">
@@ -737,26 +800,20 @@
       <button class="secondary-button" id="clear-filter" type="button">Show All</button>
     </div>
 
-    <section class="panel intro-panel" id="load-panel">
+    <section class="panel intro-panel" id="load-panel" data-glean-id="load-panel">
       <div class="panel-head">
         <div>
           <h2 class="section-title">Load Workbooks</h2>
-          <p>Upload one OPEX input workbook and one GL Transaction Summary workbook. The board runs fully in the browser and keeps the original review flow.</p>
+          <p>Upload one shared GL Transaction Summary and up to 5 OPEX input workbooks. Each OPEX becomes its own board. The board runs fully in the browser and keeps the original review flow.</p>
+        </div>
+        <div class="panel-actions">
+          <button class="ghost-button is-hidden" id="view-boards" type="button">View boards</button>
         </div>
       </div>
       <div class="upload-grid">
-        <div class="upload-card">
-          <h4>OPEX input workbook</h4>
-          <p>Supported patterns: <span class="mono">[Tbl]_*_OPEX Input *.xlsx</span> and <span class="mono">Tbl_OPEX_Input_*.xlsx</span>.</p>
-          <div class="picker">
-            <button class="secondary-button" id="pick-opex" type="button">Choose OPEX file</button>
-            <input class="hidden-input" id="opex-file" type="file" accept=".xlsx,.xlsm,.xls,.xlsb">
-          </div>
-          <div class="file-meta" id="opex-file-meta">No file selected</div>
-        </div>
-        <div class="upload-card">
-          <h4>GL Transaction Summary workbook</h4>
-          <p>Primary pattern: <span class="mono">GLTransactionSummaryEN*.xlsx</span>. The sample <span class="mono">GLTransactionSummaryMay.xlsx</span> is also accepted for validation parity.</p>
+        <div class="upload-card" data-glean-id="gl-upload-card">
+          <h4>GL Transaction Summary workbook (shared)</h4>
+          <p>Loaded once and reused by every board. Primary pattern: <span class="mono">GLTransactionSummaryEN*.xlsx</span>. The sample <span class="mono">GLTransactionSummaryMay.xlsx</span> is also accepted for validation parity.</p>
           <div class="picker">
             <button class="secondary-button" id="pick-gl" type="button">Choose GL file</button>
             <input class="hidden-input" id="gl-file" type="file" accept=".xlsx,.xlsm,.xls,.xlsb">
@@ -764,27 +821,31 @@
           <div class="file-meta" id="gl-file-meta">No file selected</div>
         </div>
       </div>
+      <div class="opex-slots" id="opex-slots" data-glean-id="opex-slots"></div>
+      <div class="add-opex-wrap">
+        <button class="secondary-button" id="add-opex" type="button">+ Add OPEX board</button>
+      </div>
       <div class="load-actions">
-        <button class="button" id="build-board" type="button" disabled>Build Board</button>
-        <div class="status-text" id="load-status">Waiting for both files.</div>
+        <button class="button" id="build-board" type="button" disabled>Build Boards</button>
+        <div class="status-text" id="load-status">Waiting for a GL file and at least one OPEX file.</div>
       </div>
       <div class="pattern-list">
         <div class="pattern-box">
           <strong>Business rules preserved:</strong><br>
-          English-only output, Comp and Benefits exclusion, merge-aware reads, new-entry and missing-actual detection, vendor-ID logic, related-entity alias matching, vendor lookup modal, and two-section export.
+          English-only output, Comp and Benefits exclusion, merge-aware reads, new-entry and missing-actual detection, vendor-ID logic, related-entity alias matching, vendor lookup modal. The shared GL is parsed once; each board applies its own last-actual month to tie-breaking and recommendations.
         </div>
         <div class="pattern-box">
           <strong>Export behavior:</strong><br>
-          Reclass export only includes selected rows with applied Department and GL recommendations. Missing accrual export only includes selected missing rows and uses the nearest prior actual value.
+          Per-board export includes only that board's selected rows with applied Department and GL recommendations. The consolidated export merges the selected rows across all boards and adds a <span class="mono">Board</span> column so you can trace each row's origin.
         </div>
       </div>
     </section>
 
-    <section class="panel" id="summary-panel">
+    <section class="panel" id="summary-panel" data-glean-id="summary-panel">
       <div class="panel-head">
         <div>
           <h3>Board Summary</h3>
-          <p>Detected workbook characteristics, actionable counts, and validation warnings.</p>
+          <p id="summary-subtitle">Detected workbook characteristics, actionable counts, and validation warnings for the active board.</p>
         </div>
       </div>
       <div class="summary-grid">
@@ -798,19 +859,20 @@
       <div class="warnings" id="warnings"></div>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-glean-id="reclass-panel">
       <div class="panel-head">
         <div>
           <h3>New Entries / Reclass Review</h3>
         </div>
         <div class="panel-actions">
           <button class="button" id="reclassify-selected" type="button">Reclassify Selected <span class="counter-badge" id="selected-counter">0</span></button>
-          <button class="secondary-button" id="generate-reclass" type="button">Generate Reclass</button>
+          <button class="secondary-button" id="generate-reclass" type="button">Generate Reclass (this board)</button>
+          <button class="secondary-button" id="generate-consolidated" type="button">Generate Consolidated Reclass <span class="counter-badge" id="consolidated-counter">0</span></button>
         </div>
       </div>
       <div class="empty-state" id="new-empty">
         <h4>No rows loaded</h4>
-        <div>Build the board to populate the reclass review table.</div>
+        <div>Build the boards to populate the reclass review table.</div>
       </div>
       <div class="table-wrap" id="new-table-wrap" hidden>
         <table>
@@ -825,7 +887,7 @@
       </div>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-glean-id="missing-panel">
       <div class="panel-head">
         <div>
           <h3>Missing Actuals</h3>
@@ -833,7 +895,7 @@
       </div>
       <div class="empty-state" id="missing-empty">
         <h4>No rows loaded</h4>
-        <div>Build the board to populate the missing accrual review table.</div>
+        <div>Build the boards to populate the missing accrual review table.</div>
       </div>
       <div class="table-wrap" id="missing-table-wrap" hidden>
         <table>
@@ -857,9 +919,9 @@
           <div class="modal-meta" id="modal-meta"></div>
         </div>
         <div class="nav-block" id="modal-nav">
-          <button class="mini-button" id="modal-prev" type="button" aria-label="Previous vendor">←</button>
+          <button class="mini-button" id="modal-prev" type="button" aria-label="Previous vendor">&#8592;</button>
           <span id="modal-nav-label">1 of 1</span>
-          <button class="mini-button" id="modal-next" type="button" aria-label="Next vendor">→</button>
+          <button class="mini-button" id="modal-next" type="button" aria-label="Next vendor">&#8594;</button>
         </div>
       </div>
       <div class="modal-body" id="modal-body"></div>
@@ -874,6 +936,8 @@
   <datalist id="gl-options"></datalist>
 
   <script>
+    const MAX_BOARDS = 5;
+
     const EXCLUDE_TERMS = [
       'A/P', 'A/R', 'Cash and Cash Equivalents', 'Accounts Payable',
       'Taxes Payable', 'Other Liabilities', 'VAT', 'TDS',
@@ -903,13 +967,32 @@
     };
 
     const state = {
-      files: { opex: null, gl: null },
-      board: null,
-      activeFilter: 'all',
-      selected: new Set(),
-      modalQueue: [],
-      modalIndex: 0
+      files: { gl: null },
+      opexSlots: [],
+      glRows: null,
+      manualOptions: null,
+      boards: [],
+      activeBoardIndex: 0,
+      slotSeq: 0
     };
+
+    function activeBoard() {
+      return state.boards[state.activeBoardIndex] || null;
+    }
+
+    function showView(view) {
+      const hasBoards = state.boards.length > 0;
+      const loadView = view === 'load' || !hasBoards;
+      $('load-panel').classList.toggle('is-hidden', !loadView);
+      $('summary-panel').classList.toggle('is-hidden', loadView);
+      document.querySelectorAll('[data-glean-id="reclass-panel"],[data-glean-id="missing-panel"]').forEach(el => el.classList.toggle('is-hidden', loadView));
+      $('filter-strip').classList.toggle('is-hidden', loadView);
+      $('manage-files').classList.toggle('is-hidden', loadView || !hasBoards);
+      $('view-boards').classList.toggle('is-hidden', !hasBoards);
+      $('board-tabs').classList.toggle('is-hidden', loadView);
+      if (loadView) $('active-filter-banner').classList.remove('is-visible');
+      syncTopbarHeight();
+    }
 
     function syncTopbarHeight() {
       const bar = document.querySelector('.topbar');
@@ -933,22 +1016,94 @@
       if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
       return `${(size / (1024 * 1024)).toFixed(2)} MB`;
     }
-    function updateFileMeta() {
-      $('opex-file-meta').textContent = state.files.opex ? `${state.files.opex.name} · ${fileSizeText(state.files.opex.size)}` : 'No file selected';
+
+    function updateLoadUi() {
       $('gl-file-meta').textContent = state.files.gl ? `${state.files.gl.name} · ${fileSizeText(state.files.gl.size)}` : 'No file selected';
-      $('build-board').disabled = !(state.files.opex && state.files.gl);
-      $('load-status').textContent = state.files.opex && state.files.gl ? 'Ready to build.' : 'Waiting for both files.';
+      const filledSlots = state.opexSlots.filter(slot => slot.file).length;
+      const ready = state.files.gl && filledSlots > 0;
+      $('build-board').disabled = !ready;
+      $('add-opex').disabled = state.opexSlots.length >= MAX_BOARDS;
+      $('load-status').textContent = ready
+        ? `Ready to build ${filledSlots} board${filledSlots === 1 ? '' : 's'}.`
+        : 'Waiting for a GL file and at least one OPEX file.';
     }
 
-    $('pick-opex').addEventListener('click', () => $('opex-file').click());
+    function renderOpexSlots() {
+      const container = $('opex-slots');
+      container.innerHTML = state.opexSlots.map((slot, index) => {
+        const meta = slot.file ? `${escapeHtml(slot.file.name)} · ${fileSizeText(slot.file.size)}` : 'No file selected';
+        const removable = state.opexSlots.length > 1;
+        return `
+          <div class="upload-card opex-slot" data-slot-id="${slot.id}" data-glean-id="opex-slot-${index + 1}">
+            <div class="slot-head">
+              <h4>OPEX board ${index + 1}</h4>
+              ${removable ? `<button class="clear-button" type="button" data-action="remove-slot" aria-label="Remove OPEX board">×</button>` : ''}
+            </div>
+            <p>Supported patterns: <span class="mono">[Tbl]_*_OPEX Input *.xlsx</span> and <span class="mono">Tbl_OPEX_Input_*.xlsx</span>.</p>
+            <input type="text" class="board-name-input" data-action="board-name" value="${escapeHtml(slot.name || '')}" placeholder="Board name (optional)" autocomplete="off">
+            <div class="picker">
+              <button class="secondary-button" type="button" data-action="pick-opex">Choose OPEX file</button>
+              <input class="hidden-input opex-input" type="file" accept=".xlsx,.xlsm,.xls,.xlsb">
+            </div>
+            <div class="file-meta">${meta}</div>
+          </div>
+        `;
+      }).join('');
+      updateLoadUi();
+      syncTopbarHeight();
+    }
+
+    function addOpexSlot() {
+      if (state.opexSlots.length >= MAX_BOARDS) return;
+      state.slotSeq += 1;
+      state.opexSlots.push({ id: `slot-${state.slotSeq}`, file: null, name: '' });
+      renderOpexSlots();
+    }
+
+    function removeOpexSlot(slotId) {
+      if (state.opexSlots.length <= 1) return;
+      state.opexSlots = state.opexSlots.filter(slot => slot.id !== slotId);
+      renderOpexSlots();
+    }
+
     $('pick-gl').addEventListener('click', () => $('gl-file').click());
-    $('opex-file').addEventListener('change', (event) => {
-      state.files.opex = event.target.files[0] || null;
-      updateFileMeta();
-    });
     $('gl-file').addEventListener('change', (event) => {
       state.files.gl = event.target.files[0] || null;
-      updateFileMeta();
+      updateLoadUi();
+    });
+    $('add-opex').addEventListener('click', addOpexSlot);
+
+    $('opex-slots').addEventListener('click', (event) => {
+      const slotEl = event.target.closest('.opex-slot');
+      if (!slotEl) return;
+      const slotId = slotEl.dataset.slotId;
+      const pick = event.target.closest('[data-action="pick-opex"]');
+      if (pick) {
+        slotEl.querySelector('.opex-input').click();
+        return;
+      }
+      const remove = event.target.closest('[data-action="remove-slot"]');
+      if (remove) {
+        removeOpexSlot(slotId);
+      }
+    });
+
+    $('opex-slots').addEventListener('change', (event) => {
+      const input = event.target.closest('.opex-input');
+      if (!input) return;
+      const slotEl = event.target.closest('.opex-slot');
+      const slot = state.opexSlots.find(item => item.id === slotEl.dataset.slotId);
+      if (!slot) return;
+      slot.file = input.files[0] || null;
+      renderOpexSlots();
+    });
+
+    $('opex-slots').addEventListener('input', (event) => {
+      const nameInput = event.target.closest('[data-action="board-name"]');
+      if (!nameInput) return;
+      const slotEl = event.target.closest('.opex-slot');
+      const slot = state.opexSlots.find(item => item.id === slotEl.dataset.slotId);
+      if (slot) slot.name = nameInput.value;
     });
 
     function validateFilename(name, kind) {
@@ -1291,6 +1446,35 @@
       return topKeys.sort()[0] || null;
     }
 
+    function distribution(entries, accessor) {
+      const counts = new Map();
+      entries.forEach(entry => {
+        const key = accessor(entry);
+        if (!key) return;
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
+      const total = [...counts.values()].reduce((sum, value) => sum + value, 0);
+      const ranked = [...counts.entries()]
+        .map(([key, count]) => ({ key, count }))
+        .sort((a, b) => b.count - a.count || String(a.key).localeCompare(String(b.key)));
+      return { ranked, total };
+    }
+
+    function freqDetail(dist, total, picked) {
+      if (!dist || !dist.length) return '';
+      const rows = dist.slice(0, 5).map(item => {
+        const pct = total ? Math.round((item.count / total) * 100) : 0;
+        const isPick = picked && item.key === picked;
+        return `<div class="freq-row ${isPick ? 'is-pick' : ''}">
+          <span class="freq-key">${escapeHtml(item.key)}</span>
+          <span class="freq-bar"><span style="width:${pct}%"></span></span>
+          <span class="freq-count">${item.count} / ${total} · ${pct}%</span>
+        </div>`;
+      }).join('');
+      const extra = dist.length > 5 ? `<div class="freq-more">+${dist.length - 5} more value(s)</div>` : '';
+      return `<div class="freq-list">${rows}${extra}</div>`;
+    }
+
     function lookupVendor(glRows, vendorName, lastMonthNum, lastYear) {
       const vendorLower = String(vendorName ?? '').toLowerCase();
       let matches = glRows.filter(row => String(row['Entity: Name'] ?? '').toLowerCase().includes(vendorLower));
@@ -1326,8 +1510,11 @@
       });
 
       const validDeptTxns = txns.filter(txn => realDept(txn.dept));
+      const glTxns = txns.filter(txn => txn.gl_full && txn.gl_full !== '—');
       const deptRecommendation = pickRecommendationWithLastMonthTie(validDeptTxns, txn => txn.dept, txn => txn.is_last);
-      const glRecommendation = pickRecommendationWithLastMonthTie(txns.filter(txn => txn.gl_full && txn.gl_full !== '—'), txn => txn.gl_full, txn => txn.is_last);
+      const glRecommendation = pickRecommendationWithLastMonthTie(glTxns, txn => txn.gl_full, txn => txn.is_last);
+      const deptDist = distribution(validDeptTxns, txn => txn.dept);
+      const glDist = distribution(glTxns, txn => txn.gl_full);
       const amounts = txns.map(txn => txn.amount).filter(value => typeof value === 'number');
 
       return {
@@ -1335,6 +1522,10 @@
         transactions: txns.slice(0, 80),
         dept: deptRecommendation,
         gl: glRecommendation,
+        dept_dist: deptDist.ranked,
+        dept_total: deptDist.total,
+        gl_dist: glDist.ranked,
+        gl_total: glDist.total,
         count: txns.length,
         amt_min: amounts.length ? Math.min(...amounts) : 0,
         amt_max: amounts.length ? Math.max(...amounts) : 0,
@@ -1403,7 +1594,6 @@
         vendorsWithoutId,
         lookupNotFound
       };
-      const manualOptions = buildManualOptions(glRows);
       return {
         lastMon: opexData.lastMon,
         priorMon: opexData.priorMon,
@@ -1411,10 +1601,13 @@
         className: opexData.className,
         rows: { newRows, missingRows },
         glData,
-        manualOptions,
         counts,
         fileNames,
-        warnings: collectWarnings(fileNames, vendorsWithoutId, lookupNotFound)
+        warnings: collectWarnings(fileNames, vendorsWithoutId, lookupNotFound),
+        activeFilter: 'all',
+        selected: new Set(),
+        modalQueue: [],
+        modalIndex: 0
       };
     }
 
@@ -1434,43 +1627,90 @@
       $('load-status').textContent = message;
     }
 
-    async function buildBoard() {
-      if (!(state.files.opex && state.files.gl)) return;
+    async function buildBoards() {
+      if (!state.files.gl) return;
+      const slotsWithFiles = state.opexSlots.filter(slot => slot.file);
+      if (!slotsWithFiles.length) return;
       if (typeof XLSX === 'undefined') {
         setBuildStatus('The SheetJS library did not load. Check internet access or vendor the library locally.');
         return;
       }
       $('build-board').disabled = true;
-      setBuildStatus('Reading workbooks...');
+      setBuildStatus('Reading GL Transaction Summary...');
       try {
-        const [opexWb, glWb] = await Promise.all([readWorkbook(state.files.opex), readWorkbook(state.files.gl)]);
-        const opexData = parseOpex(opexWb, state.files.opex.name);
-        setBuildStatus('Building review board...');
+        const glWb = await readWorkbook(state.files.gl);
         const glRows = parseGl(glWb);
-        state.board = buildBoardState(opexData, glRows, {
-          opexName: state.files.opex.name,
-          glName: state.files.gl.name
-        });
-        state.selected = new Set();
-        state.activeFilter = 'all';
-        renderBoard();
-        setBuildStatus('Board ready.');
+        state.glRows = glRows;
+        state.manualOptions = buildManualOptions(glRows);
+        const boards = [];
+        for (let i = 0; i < slotsWithFiles.length; i += 1) {
+          const slot = slotsWithFiles[i];
+          setBuildStatus(`Building board ${i + 1} of ${slotsWithFiles.length}...`);
+          const opexWb = await readWorkbook(slot.file);
+          const opexData = parseOpex(opexWb, slot.file.name);
+          const board = buildBoardState(opexData, glRows, {
+            opexName: slot.file.name,
+            glName: state.files.gl.name
+          });
+          board.index = i;
+          board.id = `board-${i}`;
+          const fallback = opexData.className || slot.file.name.replace(/\.[^.]+$/, '');
+          board.name = (slot.name && slot.name.trim()) || fallback;
+          boards.push(board);
+        }
+        state.boards = boards;
+        state.activeBoardIndex = 0;
+        renderApp();
+        showView('boards');
+        setBuildStatus(`Built ${boards.length} board${boards.length === 1 ? '' : 's'}.`);
       } catch (error) {
         console.error(error);
         setBuildStatus(`Build failed: ${error.message}`);
       } finally {
-        $('build-board').disabled = !(state.files.opex && state.files.gl);
+        updateLoadUi();
       }
     }
 
-    $('build-board').addEventListener('click', buildBoard);
+    $('build-board').addEventListener('click', buildBoards);
     $('print-board').addEventListener('click', () => window.print());
     $('clear-filter').addEventListener('click', () => applyFilter('all'));
 
-    function renderBoard() {
-      const board = state.board;
+    function renderApp() {
+      renderManualOptionLists(state.manualOptions);
+      renderBoardTabs();
+      renderActiveBoard();
+    }
+
+    function renderBoardTabs() {
+      const tabs = $('board-tabs');
+      if (state.boards.length <= 1) {
+        tabs.classList.remove('is-visible');
+        tabs.innerHTML = '';
+      } else {
+        tabs.classList.add('is-visible');
+        tabs.innerHTML = state.boards.map((board, index) => `
+          <button class="board-tab ${index === state.activeBoardIndex ? 'is-active' : ''}" type="button" data-board-index="${index}" data-glean-id="board-tab-${index + 1}">
+            <span>${escapeHtml(board.name)}</span>
+            <span class="tab-count">${board.counts.actionable}</span>
+          </button>
+        `).join('');
+      }
+      syncTopbarHeight();
+    }
+
+    function switchBoard(index) {
+      if (index < 0 || index >= state.boards.length) return;
+      state.activeBoardIndex = index;
+      renderBoardTabs();
+      renderActiveBoard();
+    }
+
+    function renderActiveBoard() {
+      const board = activeBoard();
       if (!board) return;
-      $('brand-subtitle').textContent = `${board.lastMon} · Excl. Comp and Benefits · by MONTY`;
+      const boardLabel = state.boards.length > 1 ? `${board.name} · ` : '';
+      $('brand-subtitle').textContent = `${boardLabel}${board.lastMon} · Excl. Comp and Benefits · by MONTY`;
+      $('summary-subtitle').textContent = `Detected characteristics, actionable counts, and validation warnings for ${board.name}.`;
       $('last-actual-loaded').textContent = board.lastMon;
       $('count-all').textContent = board.counts.actionable;
       $('count-reclass').textContent = board.counts.reclassRows;
@@ -1482,18 +1722,17 @@
       $('summary-missing').textContent = board.counts.missingRows;
       $('summary-noid').textContent = board.counts.vendorsWithoutId;
       $('summary-notfound').textContent = board.counts.lookupNotFound;
-      renderManualOptionLists(board.manualOptions);
       renderWarnings(board.warnings);
       renderHeaders(board.priorMon, board.lastMon, 'new-header-row', 'new');
       renderHeaders(board.priorMon, board.lastMon, 'missing-header-row', 'missing');
-      renderRows('new-tbody', board.rows.newRows, board.priorMon, board.lastMon);
-      renderRows('missing-tbody', board.rows.missingRows, board.priorMon, board.lastMon);
+      renderRows('new-tbody', board.rows.newRows, board.priorMon, board.lastMon, board);
+      renderRows('missing-tbody', board.rows.missingRows, board.priorMon, board.lastMon, board);
       $('new-empty').hidden = board.rows.newRows.length > 0;
       $('new-table-wrap').hidden = board.rows.newRows.length === 0;
       $('missing-empty').hidden = board.rows.missingRows.length > 0;
       $('missing-table-wrap').hidden = board.rows.missingRows.length === 0;
       updateSelectionUi();
-      applyFilter('all');
+      applyFilter(board.activeFilter);
       syncTopbarHeight();
     }
 
@@ -1556,7 +1795,7 @@
       return `<input type="text" class="${cls}" data-manual-field="${field}" list="${listId}" value="${escapeHtml(value || '')}" placeholder="—" autocomplete="off">`;
     }
 
-    function renderRows(targetId, rows, priorMonths, lastMonth) {
+    function renderRows(targetId, rows, priorMonths, lastMonth, board) {
       const tbody = $(targetId);
       tbody.innerHTML = rows.map(row => {
         const priorCells = priorMonths.map((mon, index) => {
@@ -1567,11 +1806,13 @@
         }).join('');
         const deptHtml = manualInputHtml('dept', row.recommendation.dept || '', 'department-options', 'dept-manual');
         const glHtml = manualInputHtml('gl', row.recommendation.gl || '', 'gl-options', 'gl-manual');
-        const rowClass = row.selected ? 'board-row is-selected' : 'board-row';
+        const isSelected = board.selected.has(row.id);
+        const rowClass = isSelected ? 'board-row is-selected' : 'board-row';
         return `
           <tr
             class="${rowClass}"
             data-row-id="${escapeHtml(row.id)}"
+            data-glean-id="row-${escapeHtml(board.id)}-${escapeHtml(row.id)}"
             data-section="${targetId === 'new-tbody' ? 'new' : 'missing'}"
             data-filter="${escapeHtml(row.filter)}"
             data-vid="${escapeHtml(row.vid || '')}"
@@ -1601,7 +1842,8 @@
     }
 
     function applyFilter(filter) {
-      state.activeFilter = filter;
+      const board = activeBoard();
+      if (board) board.activeFilter = filter;
       document.querySelectorAll('.filter-card').forEach(card => card.classList.toggle('is-active', card.dataset.filter === filter));
       const banner = $('active-filter-banner');
       if (filter === 'all') {
@@ -1619,26 +1861,42 @@
     }
 
     function rowById(rowId) {
-      if (!state.board) return null;
-      return [...state.board.rows.newRows, ...state.board.rows.missingRows].find(row => row.id === rowId) || null;
+      const board = activeBoard();
+      if (!board) return null;
+      return [...board.rows.newRows, ...board.rows.missingRows].find(row => row.id === rowId) || null;
     }
 
     function toggleRowSelection(rowElement) {
-      if (!rowElement) return;
-      if (state.activeFilter !== 'all' && rowElement.classList.contains('is-dimmed')) return;
+      const board = activeBoard();
+      if (!board || !rowElement) return;
+      if (board.activeFilter !== 'all' && rowElement.classList.contains('is-dimmed')) return;
       const rowId = rowElement.dataset.rowId;
       if (!rowId) return;
-      if (state.selected.has(rowId)) state.selected.delete(rowId);
-      else state.selected.add(rowId);
+      if (board.selected.has(rowId)) board.selected.delete(rowId);
+      else board.selected.add(rowId);
       const rowData = rowById(rowId);
-      if (rowData) rowData.selected = state.selected.has(rowId);
-      rowElement.classList.toggle('is-selected', state.selected.has(rowId));
+      if (rowData) rowData.selected = board.selected.has(rowId);
+      rowElement.classList.toggle('is-selected', board.selected.has(rowId));
       updateSelectionUi();
     }
 
+    function boardSelectedNewCount(board) {
+      return board ? board.rows.newRows.filter(row => board.selected.has(row.id)).length : 0;
+    }
+
+    function reclassReadyCount(board) {
+      return board ? board.rows.newRows.filter(row => board.selected.has(row.id) && row.recommendation.dept && row.recommendation.gl).length : 0;
+    }
+
     function updateSelectionUi() {
-      const newSelected = state.board ? state.board.rows.newRows.filter(row => state.selected.has(row.id)).length : 0;
-      $('selected-counter').textContent = String(newSelected);
+      const board = activeBoard();
+      $('selected-counter').textContent = String(boardSelectedNewCount(board));
+      let consolidated = 0;
+      state.boards.forEach(b => {
+        consolidated += reclassReadyCount(b);
+        consolidated += b.rows.missingRows.filter(row => b.selected.has(row.id)).length;
+      });
+      $('consolidated-counter').textContent = String(consolidated);
     }
 
     function clearRecommendation(rowElement) {
@@ -1656,14 +1914,16 @@
         glNode.value = '';
         glNode.classList.remove('is-filled');
       }
+      updateSelectionUi();
     }
 
     function openModalForSelected() {
-      if (!state.board) return;
-      const queue = state.board.rows.newRows.filter(row => state.selected.has(row.id));
+      const board = activeBoard();
+      if (!board) return;
+      const queue = board.rows.newRows.filter(row => board.selected.has(row.id));
       if (!queue.length) return;
-      state.modalQueue = queue;
-      state.modalIndex = 0;
+      board.modalQueue = queue;
+      board.modalIndex = 0;
       $('modal-overlay').classList.add('is-open');
       $('modal-overlay').setAttribute('aria-hidden', 'false');
       renderModal();
@@ -1675,13 +1935,15 @@
     }
 
     function renderModal() {
-      const row = state.modalQueue[state.modalIndex];
+      const board = activeBoard();
+      if (!board) return;
+      const row = board.modalQueue[board.modalIndex];
       if (!row) return;
-      const data = row.vid ? state.board.glData[row.vid] : null;
+      const data = row.vid ? board.glData[row.vid] : null;
       $('modal-title').textContent = `GL Transaction Lookup — ${row.vname}`;
-      $('modal-meta').textContent = `Vendor ID: ${row.vid || 'No ID'} · ${state.board.fileNames.glName}`;
-      $('modal-nav').classList.toggle('is-visible', state.modalQueue.length > 1);
-      $('modal-nav-label').textContent = `${state.modalIndex + 1} of ${state.modalQueue.length}`;
+      $('modal-meta').textContent = `${board.name} · Vendor ID: ${row.vid || 'No ID'} · ${board.fileNames.glName}`;
+      $('modal-nav').classList.toggle('is-visible', board.modalQueue.length > 1);
+      $('modal-nav-label').textContent = `${board.modalIndex + 1} of ${board.modalQueue.length}`;
       const applyDisabled = !row.vid || !(data && data.dept && data.gl);
       $('modal-apply').disabled = applyDisabled;
 
@@ -1694,6 +1956,8 @@
         return;
       }
 
+      const deptPickCount = (data.dept_dist || []).find(item => item.key === data.dept)?.count || 0;
+      const glPickCount = (data.gl_dist || []).find(item => item.key === data.gl)?.count || 0;
       const foundBadgeClass = data.found_by === 'Entity (Line)' ? 'found-badge line' : 'found-badge';
       const txRows = (data.transactions || []).map(txn => `
         <tr class="${txn.is_last ? 'last-month' : ''}">
@@ -1712,8 +1976,18 @@
           <div class="modal-card"><div class="label">Maximum</div><div class="value">${escapeHtml(currency2(data.amt_max || 0))}</div></div>
         </div>
         <div class="recommendation-grid">
-          <div class="recommendation-card"><div class="label">Department recommendation</div><div class="value">${escapeHtml(data.dept || 'No recommendation')}</div></div>
-          <div class="recommendation-card"><div class="label">GL recommendation</div><div class="value">${escapeHtml(data.gl || 'No recommendation')}</div></div>
+          <div class="recommendation-card">
+            <div class="label">Department recommendation</div>
+            <div class="value">${escapeHtml(data.dept || 'No recommendation')}</div>
+            ${data.dept ? `<div class="freq-caption">Chosen because it appears in ${deptPickCount} of ${data.dept_total} department-tagged transaction(s).</div>` : ''}
+            ${freqDetail(data.dept_dist, data.dept_total, data.dept)}
+          </div>
+          <div class="recommendation-card">
+            <div class="label">GL recommendation</div>
+            <div class="value">${escapeHtml(data.gl || 'No recommendation')}</div>
+            ${data.gl ? `<div class="freq-caption">Chosen because it appears in ${glPickCount} of ${data.gl_total} transaction(s).</div>` : ''}
+            ${freqDetail(data.gl_dist, data.gl_total, data.gl)}
+          </div>
         </div>
         <div class="table-wrap">
           <table class="transactions-table">
@@ -1725,16 +1999,18 @@
     }
 
     function applyCurrentRecommendation() {
-      const row = state.modalQueue[state.modalIndex];
+      const board = activeBoard();
+      if (!board) return;
+      const row = board.modalQueue[board.modalIndex];
       if (!row || !row.vid) return;
-      const data = state.board.glData[row.vid];
+      const data = board.glData[row.vid];
       if (!data || !data.dept || !data.gl) return;
       row.recommendation = { dept: data.dept, gl: data.gl };
-      renderRows('new-tbody', state.board.rows.newRows, state.board.priorMon, state.board.lastMon);
-      applyFilter(state.activeFilter);
+      renderRows('new-tbody', board.rows.newRows, board.priorMon, board.lastMon, board);
+      applyFilter(board.activeFilter);
       updateSelectionUi();
-      if (state.modalIndex < state.modalQueue.length - 1) {
-        state.modalIndex += 1;
+      if (board.modalIndex < board.modalQueue.length - 1) {
+        board.modalIndex += 1;
         renderModal();
       } else {
         closeModal();
@@ -1790,15 +2066,17 @@
       return matched[0] || null;
     }
 
-    function buildReclassExportRows() {
-      return state.board.rows.newRows
-        .filter(row => state.selected.has(row.id) && row.recommendation.dept && row.recommendation.gl)
+    function buildReclassExportRows(board, includeBoard) {
+      return board.rows.newRows
+        .filter(row => board.selected.has(row.id) && row.recommendation.dept && row.recommendation.gl)
         .map(row => {
-          const lookup = row.vid ? state.board.glData[row.vid] : null;
+          const lookup = row.vid ? board.glData[row.vid] : null;
           if (!lookup) return null;
           const source = resolveExportSource(lookup.export_rows || [], row);
           if (!source) return null;
-          return {
+          const payload = {};
+          if (includeBoard) payload['Board'] = board.name;
+          Object.assign(payload, {
             'Name (GL-style)': source['Name (GL-style)'] || '',
             'Department: Name': source['Department: Name'] || '',
             'Description': source['Description'] || '',
@@ -1812,20 +2090,26 @@
             'Data Source': 'Netsuite',
             'Reclass to Business Units': row.recommendation.dept,
             'Reclass to GL account': row.recommendation.gl
-          };
+          });
+          return payload;
         })
         .filter(Boolean);
     }
 
-    function buildMissingExportRows() {
-      return state.board.rows.missingRows
-        .filter(row => state.selected.has(row.id))
-        .map(row => ({
-          'Vendor': row.vendorFull || '',
-          'Amount TCV': row.nearestPriorAmount === '' ? '' : Number(row.nearestPriorAmount),
-          'GL Account': row.fullGl || '',
-          'Class': state.board.className || ''
-        }))
+    function buildMissingExportRows(board, includeBoard) {
+      return board.rows.missingRows
+        .filter(row => board.selected.has(row.id))
+        .map(row => {
+          const payload = {};
+          if (includeBoard) payload['Board'] = board.name;
+          Object.assign(payload, {
+            'Vendor': row.vendorFull || '',
+            'Amount TCV': row.nearestPriorAmount === '' ? '' : Number(row.nearestPriorAmount),
+            'GL Account': row.fullGl || '',
+            'Class': board.className || ''
+          });
+          return payload;
+        })
         .filter(row => row['Vendor'] || row['Amount TCV'] || row['GL Account'] || row['Class']);
     }
 
@@ -1852,10 +2136,22 @@
       return `<Row>${Array.from({ length: count }, () => ssCell('', 'String')).join('')}</Row>`;
     }
 
-    function downloadExcelXml(reclassRows, missingRows) {
-      const reclassHeaders = ['Name (GL-style)', 'Department: Name', 'Description', 'Memo', 'Entity', 'Transaction Type', 'Document Number', 'Date', 'Amount', 'Date Created', 'Data Source', 'Reclass to Business Units', 'Reclass to GL account'];
-      const missingHeaders = ['Vendor', 'Amount TCV', 'GL Account', 'Class'];
-      const maxCols = reclassHeaders.length;
+    function numericHeaders(headers) {
+      return new Set(['Amount', 'Amount TCV'].filter(h => headers.includes(h)));
+    }
+
+    function valuesFromHeaders(row, headers) {
+      return headers.map(header => (row[header] === null || row[header] === undefined) ? '' : row[header]);
+    }
+
+    function typesFromHeaders(row, headers, numericSet) {
+      return headers.map(header => (numericSet.has(header) && typeof row[header] === 'number') ? 'Number' : 'String');
+    }
+
+    function downloadExcelXml(reclassHeaders, reclassRows, missingHeaders, missingRows, filename) {
+      const maxCols = Math.max(reclassHeaders.length, missingHeaders.length);
+      const reclassNumeric = numericHeaders(reclassHeaders);
+      const missingNumeric = numericHeaders(missingHeaders);
       const xml = [];
       xml.push('<?xml version="1.0"?>');
       xml.push('<?mso-application progid="Excel.Sheet"?>');
@@ -1865,44 +2161,68 @@
       xml.push(blankRow(maxCols));
       xml.push(rowFromValues(reclassHeaders, reclassHeaders.map(() => 'String')));
       reclassRows.forEach(row => {
-        xml.push(rowFromValues([
-          row['Name (GL-style)'], row['Department: Name'], row['Description'], row['Memo'], row['Entity'],
-          row['Transaction Type'], row['Document Number'], row['Date'], row['Amount'], row['Date Created'],
-          row['Data Source'], row['Reclass to Business Units'], row['Reclass to GL account']
-        ], ['String', 'String', 'String', 'String', 'String', 'String', 'String', 'String', typeof row['Amount'] === 'number' ? 'Number' : 'String', 'String', 'String', 'String', 'String']));
+        xml.push(rowFromValues(valuesFromHeaders(row, reclassHeaders), typesFromHeaders(row, reclassHeaders, reclassNumeric)));
       });
       xml.push(blankRow(maxCols));
       xml.push(blankRow(maxCols));
       xml.push(rowFromValues(['MISSING ACCRUALS'], ['String']));
       xml.push(blankRow(maxCols));
-      xml.push(rowFromValues(missingHeaders.concat(Array(maxCols - missingHeaders.length).fill('')), Array(maxCols).fill('String')));
+      xml.push(rowFromValues(missingHeaders.concat(Array(Math.max(0, maxCols - missingHeaders.length)).fill('')), Array(maxCols).fill('String')));
       missingRows.forEach(row => {
-        xml.push(rowFromValues([
-          row['Vendor'], row['Amount TCV'], row['GL Account'], row['Class']
-        ], ['String', typeof row['Amount TCV'] === 'number' ? 'Number' : 'String', 'String', 'String']));
+        xml.push(rowFromValues(valuesFromHeaders(row, missingHeaders), typesFromHeaders(row, missingHeaders, missingNumeric)));
       });
       xml.push('</Table></Worksheet></Workbook>');
       const blob = new Blob([xml.join('')], { type: 'application/vnd.ms-excel' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'opex_reclass_export.xls';
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 600);
     }
 
+    function safeFileToken(value) {
+      return String(value || 'board').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '').toLowerCase() || 'board';
+    }
+
     function generateReclassExport() {
-      if (!state.board) return;
-      const reclassRows = buildReclassExportRows();
-      const missingRows = buildMissingExportRows();
+      const board = activeBoard();
+      if (!board) return;
+      const reclassHeaders = ['Name (GL-style)', 'Department: Name', 'Description', 'Memo', 'Entity', 'Transaction Type', 'Document Number', 'Date', 'Amount', 'Date Created', 'Data Source', 'Reclass to Business Units', 'Reclass to GL account'];
+      const missingHeaders = ['Vendor', 'Amount TCV', 'GL Account', 'Class'];
+      const reclassRows = buildReclassExportRows(board, false);
+      const missingRows = buildMissingExportRows(board, false);
       if (!reclassRows.length && !missingRows.length) {
-        window.alert('No exportable rows were found from the current selection. For reclass rows, apply Department and GL recommendations first.');
+        window.alert('No exportable rows were found from this board\u2019s selection. For reclass rows, apply Department and GL recommendations first.');
         return;
       }
-      downloadExcelXml(reclassRows, missingRows);
+      downloadExcelXml(reclassHeaders, reclassRows, missingHeaders, missingRows, `opex_reclass_${safeFileToken(board.name)}.xls`);
     }
+
+    function generateConsolidatedExport() {
+      if (!state.boards.length) return;
+      const reclassHeaders = ['Board', 'Name (GL-style)', 'Department: Name', 'Description', 'Memo', 'Entity', 'Transaction Type', 'Document Number', 'Date', 'Amount', 'Date Created', 'Data Source', 'Reclass to Business Units', 'Reclass to GL account'];
+      const missingHeaders = ['Board', 'Vendor', 'Amount TCV', 'GL Account', 'Class'];
+      const reclassRows = [];
+      const missingRows = [];
+      state.boards.forEach(board => {
+        reclassRows.push(...buildReclassExportRows(board, true));
+        missingRows.push(...buildMissingExportRows(board, true));
+      });
+      if (!reclassRows.length && !missingRows.length) {
+        window.alert('No exportable rows were found across any board. Select rows and apply recommendations first.');
+        return;
+      }
+      downloadExcelXml(reclassHeaders, reclassRows, missingHeaders, missingRows, 'opex_reclass_consolidated.xls');
+    }
+
+    $('board-tabs').addEventListener('click', event => {
+      const tab = event.target.closest('.board-tab');
+      if (!tab) return;
+      switchBoard(Number(tab.dataset.boardIndex));
+    });
 
     document.addEventListener('click', event => {
       const filterCard = event.target.closest('.filter-card');
@@ -1918,18 +2238,22 @@
         generateReclassExport();
         return;
       }
+      if (event.target.closest('button')?.id === 'generate-consolidated') {
+        generateConsolidatedExport();
+        return;
+      }
       if (event.target.closest('button')?.id === 'modal-close') {
         closeModal();
         return;
       }
       if (event.target.closest('button')?.id === 'modal-prev') {
-        state.modalIndex = Math.max(0, state.modalIndex - 1);
-        renderModal();
+        const board = activeBoard();
+        if (board) { board.modalIndex = Math.max(0, board.modalIndex - 1); renderModal(); }
         return;
       }
       if (event.target.closest('button')?.id === 'modal-next') {
-        state.modalIndex = Math.min(state.modalQueue.length - 1, state.modalIndex + 1);
-        renderModal();
+        const board = activeBoard();
+        if (board) { board.modalIndex = Math.min(board.modalQueue.length - 1, board.modalIndex + 1); renderModal(); }
         return;
       }
       if (event.target.closest('button')?.id === 'modal-apply') {
@@ -1960,13 +2284,19 @@
       if (field === 'dept') rowData.recommendation.dept = value || null;
       if (field === 'gl') rowData.recommendation.gl = value || null;
       input.classList.toggle('is-filled', !!value);
+      updateSelectionUi();
     });
 
     $('modal-overlay').addEventListener('click', event => {
       if (event.target === $('modal-overlay')) closeModal();
     });
 
-    updateFileMeta();
+    $('manage-files').addEventListener('click', () => showView('load'));
+    $('view-boards').addEventListener('click', () => showView('boards'));
+
+    addOpexSlot();
+    updateLoadUi();
+    showView('load');
 
     if (window.GleanBridge && typeof window.GleanBridge.postMessage === 'function') {
       window.GleanBridge.postMessage({
