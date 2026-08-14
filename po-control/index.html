@@ -8,6 +8,26 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  .back-home{
+  width:34px;
+  height:34px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:8px;
+  background:var(--t1);
+  color:#fff;
+  text-decoration:none;
+  font-size:20px;
+  line-height:1;
+  transition:transform .15s ease,background .15s ease;
+}
+
+.back-home:hover{
+  background:var(--blue);
+  transform:translateX(-2px);
+}
+
 <style>
 :root{
   --bg:#F4F3EF; --surface:#FFFFFF; --border:#E2E0D8; --border-md:#C8C6BC;
@@ -194,8 +214,19 @@ footer{margin-top:30px;padding-top:16px;border-top:1px solid var(--border);font-
 <div class="wrap" id="dashboardView">
   <header>
     <div class="hd-row">
-      <div class="hd-left">
-        <div class="logo">KH</div>
+<div class="hd-left">
+  <a
+    class="back-home"
+    href="https://script.google.com/a/macros/komodohealth.com/s/AKfycbwmBWQYqDNoMoaHkNF2bPvCKsl-HC_cLZve-ny9I0C68XYoYjUbFtTDktXcs23GdxVL/exec"
+    target="_top"
+    rel="noopener noreferrer"
+    aria-label="Back to main workspace"
+    title="Back to main workspace"
+  >
+    ←
+  </a>
+
+  <div class="logo">KH</div>
         <div>
           <div class="hd-title">Budget vs Actual vs POs</div>
           <div class="hd-sub" id="hdSub">source: Plan-Actual + Zip POs</div>
