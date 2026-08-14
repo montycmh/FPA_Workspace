@@ -4,52 +4,142 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BvA Dashboard Generator</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"
+  />
+
   <link rel="stylesheet" href="./styles.css" />
+
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
+
 <body>
   <aside>
     <div>
-      <div class="logo-area"><i class="ti ti-layout-dashboard"></i><span>Budget vs Actual Board</span></div>
+      <div class="logo-area">
+        <i class="ti ti-layout-dashboard"></i>
+        <span>Budget vs Actual Board</span>
+      </div>
+
       <nav>
         <ul>
-          <li class="active" data-nav="sec-overview"><i class="ti ti-layout-dashboard"></i> Overview</li>
-          <li data-nav="sec-qplan"><i class="ti ti-trending-down"></i> Quarter vs Plan</li>
-          <li data-nav="sec-qfcst"><i class="ti ti-trending-down"></i> Quarter vs FCST</li>
-          <li data-nav="sec-fyplan"><i class="ti ti-calendar-stats"></i> Full Year Plan</li>
-          <li data-nav="sec-fyfcst"><i class="ti ti-calendar-stats"></i> Full Year FCST</li>
-          <li data-nav="sec-te"><i class="ti ti-plane"></i> T&amp;E</li>
-          <li data-nav="sec-hc"><i class="ti ti-users"></i> Headcount</li>
-          <li data-nav="sec-actions"><i class="ti ti-checklist"></i> Actions</li>
-          <li id="budget-util-nav" class="hidden"><i class="ti ti-gauge"></i> Budget Utilization</li>
-          <li id="save-nav"><i class="ti ti-device-floppy"></i> Save</li>
-          <li id="download-nav"><i class="ti ti-download"></i> Download HTML</li>
-          <li id="download-pdf-nav"><i class="ti ti-file-type-pdf"></i> Download PDF</li>
+          <li class="active" data-nav="sec-overview">
+            <i class="ti ti-layout-dashboard"></i>
+            Overview
+          </li>
+
+          <li data-nav="sec-qplan">
+            <i class="ti ti-trending-down"></i>
+            Quarter vs Plan
+          </li>
+
+          <li data-nav="sec-qfcst">
+            <i class="ti ti-trending-down"></i>
+            Quarter vs FCST
+          </li>
+
+          <li data-nav="sec-fyplan">
+            <i class="ti ti-calendar-stats"></i>
+            Full Year Plan
+          </li>
+
+          <li data-nav="sec-fyfcst">
+            <i class="ti ti-calendar-stats"></i>
+            Full Year FCST
+          </li>
+
+          <li data-nav="sec-te">
+            <i class="ti ti-plane"></i>
+            T&amp;E
+          </li>
+
+          <li data-nav="sec-hc">
+            <i class="ti ti-users"></i>
+            Headcount
+          </li>
+
+          <li data-nav="sec-actions">
+            <i class="ti ti-checklist"></i>
+            Actions
+          </li>
+
+          <li id="budget-util-nav" class="hidden">
+            <i class="ti ti-gauge"></i>
+            Budget Utilization
+          </li>
+
+          <li id="save-nav">
+            <i class="ti ti-device-floppy"></i>
+            Save
+          </li>
+
+          <li id="download-nav">
+            <i class="ti ti-download"></i>
+            Download HTML
+          </li>
+
+          <li id="download-pdf-nav">
+            <i class="ti ti-file-type-pdf"></i>
+            Download PDF
+          </li>
         </ul>
       </nav>
     </div>
-    <div class="sidebar-footer" id="sidebar-footer">Upload the 4 feeds to generate a board.</div>
+
+    <div class="sidebar-footer" id="sidebar-footer">
+      Upload the 4 feeds to generate a board.
+    </div>
   </aside>
 
   <div class="main-workspace">
     <div class="topbar">
       <div class="topbar-inner">
         <div class="topbar-left">
-          <a class="icon-btn" id="home-nav" href="../index.html" title="Back to main workspace"><i class="ti ti-arrow-left"></i></a>
-          <button class="icon-btn hidden" id="back-nav" title="Back to workspace"><i class="ti ti-arrow-left"></i></button>
+          <a
+            class="icon-btn"
+            id="home-nav"
+            href="https://script.google.com/a/macros/komodohealth.com/s/AKfycbwmBWQYqDNoMoaHkNF2bPvCKsl-HC_cLZve-ny9I0C68XYoYjUbFtTDktXcs23GdxVL/exec"
+            target="_top"
+            rel="noopener noreferrer"
+            title="Back to main workspace"
+          >
+            <i class="ti ti-arrow-left"></i>
+          </a>
+
+          <button
+            type="button"
+            class="icon-btn hidden"
+            id="back-nav"
+            title="Back to workspace"
+            onclick="window.top.location.href='https://script.google.com/a/macros/komodohealth.com/s/AKfycbwmBWQYqDNoMoaHkNF2bPvCKsl-HC_cLZve-ny9I0C68XYoYjUbFtTDktXcs23GdxVL/exec'"
+          >
+            <i class="ti ti-arrow-left"></i>
+          </button>
+
           <div>
             <div class="topbar-title">BvA Dashboard</div>
-            <div class="topbar-sub">Upload Quarter, Year, HC, and T&amp;E feeds to build a reusable BvA board.</div>
+            <div class="topbar-sub">
+              Upload Quarter, Year, HC, and T&amp;E feeds to build a reusable BvA board.
+            </div>
           </div>
         </div>
+
         <div class="topbar-actions">
-          <button class="btn secondary" id="reset-btn"><i class="ti ti-refresh"></i> Reset</button>
-          <button class="btn primary" id="build-btn" disabled><i class="ti ti-wand"></i> Generate Board</button>
+          <button class="btn secondary" id="reset-btn">
+            <i class="ti ti-refresh"></i>
+            Reset
+          </button>
+
+          <button class="btn primary" id="build-btn" disabled>
+            <i class="ti ti-wand"></i>
+            Generate Board
+          </button>
         </div>
       </div>
     </div>
@@ -57,11 +147,17 @@
     <section class="sec intro" id="upload-shell">
       <div class="sec-hdr">
         <span>Required feeds</span>
-        <span class="sec-tag">Quarter &amp; Year required · HC, T&amp;E &amp; OPEX optional</span>
+        <span class="sec-tag">
+          Quarter &amp; Year required · HC, T&amp;E &amp; OPEX optional
+        </span>
       </div>
 
       <div class="board-count-bar">
-        <span class="bcb-label"><i class="ti ti-stack-2"></i> How many boards do you want to generate?</span>
+        <span class="bcb-label">
+          <i class="ti ti-stack-2"></i>
+          How many boards do you want to generate?
+        </span>
+
         <div class="board-count-seg" id="board-count-seg">
           <button type="button" class="bcs-btn active" data-count="1">1</button>
           <button type="button" class="bcs-btn" data-count="2">2</button>
@@ -69,15 +165,26 @@
           <button type="button" class="bcs-btn" data-count="4">4</button>
           <button type="button" class="bcs-btn" data-count="5">5</button>
         </div>
-        <span class="bcb-hint">Each board opens in its own window.</span>
+
+        <span class="bcb-hint">
+          Each board opens in its own window.
+        </span>
       </div>
 
       <div id="board-groups"></div>
 
       <div class="note-strip">
-        <div><strong>Generic rules:</strong> labels derive from the current files, not hardcoded BU logic.</div>
-        <div><strong>Business model:</strong> negative expense variance is favorable, positive is unfavorable.</div>
+        <div>
+          <strong>Generic rules:</strong>
+          labels derive from the current files, not hardcoded BU logic.
+        </div>
+
+        <div>
+          <strong>Business model:</strong>
+          negative expense variance is favorable, positive is unfavorable.
+        </div>
       </div>
+
       <div id="build-errors" class="build-errors"></div>
 
       <div id="launcher" class="launcher hidden"></div>
