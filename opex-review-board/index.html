@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OPEX Review Board</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
   <style>
     :root {
       --artifact-background: var(--theme-background, #ffffff);
@@ -699,6 +700,36 @@
       border: 0;
     }
 
+    .navigation-loading {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: grid;
+      place-items: center;
+      background: rgba(244, 247, 251, .97);
+    }
+    .navigation-loading-card {
+      display: grid;
+      justify-items: center;
+      gap: 9px;
+      max-width: 380px;
+      padding: 30px;
+      text-align: center;
+      color: #1E2761;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .navigation-loading-card strong { font-size: 17px; }
+    .navigation-loading-card span { color: #5F5E5A; font-size: 13px; line-height: 1.5; }
+    .navigation-loading-icon {
+      color: #1E2761;
+      font-size: 48px;
+      animation: detective-pulse 1.1s ease-in-out infinite;
+    }
+    @keyframes detective-pulse {
+      0%, 100% { transform: scale(1); opacity: .75; }
+      50% { transform: scale(1.12); opacity: 1; }
+    }
+
     @media screen and (max-width: 1280px) {
       .topbar-actions { width: 100%; justify-items: end; margin-left: 0; }
       .filter-strip { width: 100%; }
@@ -789,6 +820,7 @@
   rel="noopener noreferrer"
   aria-label="Back to Launchpad"
   title="Back to Launchpad"
+  onclick="showBackMessage(event, this)"
 >
   &#8592;
 </a>
@@ -946,6 +978,23 @@
 
   <script>
     const MAX_BOARDS = 5;
+
+    function showBackMessage(event, link) {
+      event.preventDefault();
+      const overlay = document.createElement('div');
+      overlay.className = 'navigation-loading';
+      overlay.innerHTML = `
+        <div class="navigation-loading-card">
+          <i class="ti ti-user-search navigation-loading-icon"></i>
+          <strong>Checking your access...</strong>
+          <span>Authenticating with Google Workspace and loading your authorized modules.</span>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      setTimeout(function() {
+        window.top.location.replace(link.href);
+      }, 250);
+    }
 
     const EXCLUDE_TERMS = [
       'A/P', 'A/R', 'Cash and Cash Equivalents', 'Accounts Payable',
