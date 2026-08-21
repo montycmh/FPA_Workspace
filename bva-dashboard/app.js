@@ -1298,26 +1298,65 @@
     }
   }
 
-  function renderLauncher(){
-    if(!dom.launcher) return;
-    const cards = state.generated.map((g, i) => `
-      <button type="button" class="launch-btn" data-launch="${i}">
-        <span class="lb-ic"><i class="ti ti-external-link"></i></span>
-        <span class="lb-body">
-          <span class="lb-title">Open Board ${i+1}</span>
-          <span class="lb-sub">${escapeHtml(g.title)} · ${escapeHtml(g.subtitle)}</span>
-        </span>
-      </button>`).join('');
-    dom.launcher.innerHTML = `
-      <div class="launcher-hdr"><i class="ti ti-circle-check"></i> ${state.generated.length} boards generated — open each in its own window</div>
-      <div class="launch-grid">${cards}</div>
-      <div class="launcher-note">Each button opens one window. If a window doesn't appear, allow pop-ups for this site and click again.</div>`;
-    dom.launcher.classList.remove('hidden');
-    dom.launcher.querySelectorAll('[data-launch]').forEach(btn => {
-      btn.addEventListener('click', () => openGeneratedBoard(Number(btn.dataset.launch), btn));
+function renderLauncher(){
+  if(!dom.launcher) return;
+
+  const cards = state.generated.map((g, i) => `
+    <button type="button" class="launch-btn" data-launch="${i}">
+      <span class="lb-ic"><i class="ti ti-external-link"></i></span>
+      <span class="lb-body">
+        <span class="lb-title">Open Board ${i+1}</span>
+        <span class="lb-sub">${escapeHtml(g.title)} · ${escapeHtml(g.subtitle)}</span>
+      </span>
+    </button>
+  `).join('');
+
+  dom.launcher.innerHTML = `
+    <div class="launcher-hdr">
+      <i class="ti ti-circle-check"></i>
+      ${state.generated.length} boards generated
+    </div>
+
+    <div class="launcher-actions">
+      <button type="button" class="launcher-action primary" data-open-package>
+        <i class="ti ti-layout-tabs"></i>
+        Open Board Package
+      </button>
+
+      <button type="button" class="launcher-action" data-download-package>
+        <i class="ti ti-file-zip"></i>
+        Download ZIP
+      </button>
+    </div>
+
+    <div class="launch-grid">${cards}</div>
+
+    <div class="launcher-note">
+      Open Board Package lets you edit each board in its own tab.
+      Download ZIP captures the current comments, actions and changes.
+    </div>
+  `;
+
+  dom.launcher.classList.remove('hidden');
+
+  dom.launcher.querySelectorAll('[data-launch]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openGeneratedBoard(Number(btn.dataset.launch), btn);
     });
-    dom.launcher.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  });
+
+  const openPackageBtn = dom.launcher.querySelector('[data-open-package]');
+  if(openPackageBtn){
+    openPackageBtn.addEventListener('click', openGeneratedPackage);
   }
+
+  const downloadPackageBtn = dom.launcher.querySelector('[data-download-package]');
+  if(downloadPackageBtn){
+    downloadPackageBtn.addEventListener('click', downloadGeneratedPackage);
+  }
+
+  dom.launcher.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
 
   function openGeneratedBoard(index, btn){
     const g = state.generated[index];
@@ -1335,7 +1374,262 @@
       toast('Could not open the board window');
     }
   }
+function packageRecords(){
+  return state.generated.map((g, i) => ({
+    title: g.title,
+    subtitle: g.subtitle,
+    fileName: `${g.fileBase || `bva_board_${i+1}`}.html`,
+    html: g.html
+  }));
+}
 
+function openGeneratedPackage(){
+  const boards = packageRecords();
+  const w = window.open('', '_blank');
+
+  if(!w){
+    toast('Pop-up blocked — allow pop-ups and try again');
+    return;
+  }
+
+  w.document.open();
+  w.document.write(buildPackageHubHtml(boards));
+  w.document.close();
+}
+
+async function downloadGeneratedPackage(){
+  if(typeof JSZip === 'undefined'){
+    toast('JSZip did not load');
+    return;
+  }
+
+  const boards = packageRecords();
+  const zip = new JSZip();
+
+  boards.forEach(board => {
+    zip.file(board.fileName, board.html);
+  });
+
+  zip.file('index.html', buildPackageHubHtml(boards));
+
+  const blob = await zip.generateAsync({ type:'blob' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.href = url;
+  link.download = 'bva_boards.zip';
+  link.click();
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('ZIP downloaded');
+}
+
+function buildPackageHubHtml(boards){
+  const safeBoards = JSON.stringify(boards)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BvA Board Package</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;font-family:Inter,Arial,sans-serif;background:#eef2fb;color:#0f172a}
+  body{padding:22px}
+  .hub{max-width:1500px;margin:auto;background:#fff;border:1px solid #e9eef7;border-radius:16px;box-shadow:0 6px 24px rgba(15,23,42,.08);overflow:hidden}
+  .hub-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 26px;border-bottom:1px solid #e9eef7}
+  .hub-title{font-size:22px;font-weight:800}
+  .hub-sub{margin-top:5px;color:#64748b;font-size:12px}
+  .hub-actions{display:flex;gap:9px}
+  .hub-btn{border:1px solid #cbd5e1;border-radius:9px;padding:10px 14px;background:#fff;color:#334155;font-weight:800;cursor:pointer}
+  .hub-btn.primary{background:#4f46e5;color:#fff;border-color:#4f46e5}
+  .tabs{display:flex;gap:6px;overflow-x:auto;padding:14px 20px;border-bottom:1px solid #e9eef7;background:#f8fafc}
+  .tab{border:1px solid #cbd5e1;border-radius:9px;padding:9px 14px;background:#fff;color:#475569;font-weight:800;cursor:pointer;white-space:nowrap}
+  .tab.active{background:#4f46e5;border-color:#4f46e5;color:#fff}
+  .frames{height:calc(100vh - 155px);min-height:680px}
+  .board-frame{display:none;width:100%;height:100%;min-height:680px;border:0}
+  .board-frame.active{display:block}
+  .status{padding:8px 22px;color:#64748b;font-size:11px;border-bottom:1px solid #e9eef7}
+</style>
+</head>
+<body>
+<div class="hub">
+  <div class="hub-header">
+    <div>
+      <div class="hub-title">BvA Board Package</div>
+      <div class="hub-sub">Each tab contains an independent editable board.</div>
+    </div>
+    <div class="hub-actions">
+      <button class="hub-btn primary" id="download-zip">Download ZIP</button>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div class="status" id="status"></div>
+  <div class="frames" id="frames"></div>
+</div>
+
+<script>
+window.__BVA_BOARDS__ = ${safeBoards};
+
+(function(){
+  const boards = window.__BVA_BOARDS__ || [];
+  const tabs = document.getElementById('tabs');
+  const frames = document.getElementById('frames');
+  const status = document.getElementById('status');
+
+  boards.forEach((board, index) => {
+    const tab = document.createElement('button');
+    tab.className = 'tab';
+    tab.textContent = board.title || ('Board ' + (index + 1));
+    tab.dataset.index = index;
+    tabs.appendChild(tab);
+
+    const frame = document.createElement('iframe');
+    frame.className = 'board-frame';
+    frame.dataset.index = index;
+    frame.srcdoc = board.html;
+    frames.appendChild(frame);
+
+    tab.addEventListener('click', () => activate(index));
+  });
+
+  function activate(index){
+    document.querySelectorAll('.tab').forEach((tab, i) => {
+      tab.classList.toggle('active', i === index);
+    });
+
+    document.querySelectorAll('.board-frame').forEach((frame, i) => {
+      frame.classList.toggle('active', i === index);
+    });
+
+    const board = boards[index];
+    status.textContent = board
+      ? (board.title + ' · ' + board.subtitle)
+      : '';
+  }
+
+  function waitForFrame(frame){
+    if(frame.contentDocument &&
+       frame.contentDocument.readyState === 'complete'){
+      return Promise.resolve();
+    }
+
+    return new Promise(resolve => {
+      frame.addEventListener('load', resolve, { once:true });
+    });
+  }
+
+  function snapshotFrame(frame){
+    const sourceDoc = frame.contentDocument;
+
+    if(!sourceDoc){
+      throw new Error('Could not read board frame');
+    }
+
+    const clone = sourceDoc.documentElement.cloneNode(true);
+    const sourceFields = sourceDoc.querySelectorAll('textarea,input,select');
+    const clonedFields = clone.querySelectorAll('textarea,input,select');
+
+    sourceFields.forEach((source, index) => {
+      const target = clonedFields[index];
+      if(!target) return;
+
+      if(source.tagName === 'TEXTAREA'){
+        target.textContent = source.value;
+      }else if(source.type === 'checkbox' || source.type === 'radio'){
+        if(source.checked) target.setAttribute('checked', 'checked');
+        else target.removeAttribute('checked');
+      }else if(source.tagName === 'SELECT'){
+        Array.from(target.options).forEach((option, i) => {
+          const selected = source.options[i] &&
+            source.options[i].selected;
+
+          option.selected = selected;
+
+          if(selected) option.setAttribute('selected', 'selected');
+          else option.removeAttribute('selected');
+        });
+      }else{
+        target.setAttribute('value', source.value);
+      }
+    });
+
+    clone.querySelectorAll('#toast').forEach(el => el.remove());
+
+    return '<!DOCTYPE html>\\n' + clone.outerHTML;
+  }
+
+  async function downloadZip(){
+    if(typeof JSZip === 'undefined'){
+      alert('JSZip could not be loaded.');
+      return;
+    }
+
+    const currentBoards = [];
+    const frameList = Array.from(document.querySelectorAll('.board-frame'));
+
+    await Promise.all(frameList.map(waitForFrame));
+
+    frameList.forEach((frame, index) => {
+      currentBoards.push({
+        title: boards[index].title,
+        subtitle: boards[index].subtitle,
+        fileName: boards[index].fileName,
+        html: snapshotFrame(frame)
+      });
+    });
+
+    const zip = new JSZip();
+
+    currentBoards.forEach(board => {
+      zip.file(board.fileName, board.html);
+    });
+
+    zip.file('index.html', buildUpdatedIndex(currentBoards));
+
+    const blob = await zip.generateAsync({ type:'blob' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = 'bva_boards_updated.zip';
+    link.click();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function buildUpdatedIndex(updatedBoards){
+    const json = JSON.stringify(updatedBoards)
+      .replace(/</g, '\\\\u003c')
+      .replace(/>/g, '\\\\u003e')
+      .replace(/&/g, '\\\\u0026')
+      .replace(/\\u2028/g, '\\\\u2028')
+      .replace(/\\u2029/g, '\\\\u2029');
+
+    return document.documentElement.outerHTML
+      .replace(
+        /window\\.__BVA_BOARDS__\\s*=\\s*[^;]+;/,
+        'window.__BVA_BOARDS__ = ' + json + ';'
+      );
+  }
+
+  document.getElementById('download-zip')
+    .addEventListener('click', downloadZip);
+
+  if(boards.length) activate(0);
+})();
+</script>
+</body>
+</html>`;
+}
   async function downloadPdf(){
     if(!state.model){ toast('Build a dashboard first'); return; }
     if(typeof html2canvas === 'undefined' || !window.jspdf){
