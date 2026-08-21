@@ -1058,23 +1058,34 @@
     else { const head = clone.querySelector('head'); if(head) head.appendChild(styleTag); }
   }
 
-  function freezeCanvasesAsImages(clone){
-    document.querySelectorAll('canvas[id]').forEach(liveCanvas => {
-      let dataUrl;
-      try{ dataUrl = liveCanvas.toDataURL('image/png'); }
-      catch(e){ console.warn('Could not snapshot canvas ' + liveCanvas.id, e); return; }
-      const cloneCanvas = clone.querySelector('#' + liveCanvas.id);
-      if(!cloneCanvas) return;
-      const img = document.createElement('img');
-      img.src = dataUrl;
-      img.alt = liveCanvas.id;
-      img.style.cssText = liveCanvas.style.cssText || '';
-      if(!img.style.width) img.style.width = '100%';
-      if(!img.style.height) img.style.height = '100%';
-      img.style.display = 'block';
-      cloneCanvas.replaceWith(img);
-    });
-  }
+function freezeCanvasesAsImages(clone){
+  document.querySelectorAll('canvas[id]').forEach(liveCanvas => {
+    let dataUrl;
+
+    try{
+      dataUrl = liveCanvas.toDataURL('image/png');
+    }catch(e){
+      console.warn('Could not snapshot canvas ' + liveCanvas.id, e);
+      return;
+    }
+
+    const cloneCanvas = clone.querySelector('#' + liveCanvas.id);
+    if(!cloneCanvas) return;
+
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    img.alt = liveCanvas.id;
+    img.style.display = 'block';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '100%';
+    img.style.objectFit = 'contain';
+    img.style.objectPosition = 'center';
+
+    cloneCanvas.replaceWith(img);
+  });
+}
 
   function stripLiveScripts(clone, keepPatterns){
     const keep = keepPatterns || [];
@@ -1425,7 +1436,71 @@ async function downloadGeneratedPackage(){
 }
 
 function buildPackageHubHtml(boards){
-  const safeBoards = JSON.stringify(boards)
+  const boardFixCss = `
+<style id="bva-package-board-fix">
+  html,
+  body{
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow-x:hidden!important;
+  }
+
+  body{
+    display:block!important;
+    background:#f7f9fd!important;
+  }
+
+  aside{
+    display:none!important;
+  }
+
+  .main-workspace{
+    width:100%!important;
+    max-width:none!important;
+    margin-left:0!important;
+    padding:28px 30px 56px!important;
+    overflow-x:hidden!important;
+  }
+
+  .topbar,
+  .sec{
+    width:100%!important;
+    max-width:none!important;
+  }
+
+  .trend-wrap,
+  .wf-wrap{
+    position:relative!important;
+    width:100%!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+  }
+
+  .trend-wrap img,
+  .wf-wrap img,
+  .trend-wrap canvas,
+  .wf-wrap canvas{
+    display:block!important;
+    width:100%!important;
+    max-width:100%!important;
+    height:100%!important;
+    max-height:100%!important;
+    object-fit:contain!important;
+    object-position:center!important;
+  }
+</style>`;
+
+  const packageBoards = boards.map(board => ({
+    ...board,
+    html: String(board.html).replace(
+      /<\/head>/i,
+      `${boardFixCss}</head>`
+    )
+  }));
+
+  const safeBoards = JSON.stringify(packageBoards)
     .replace(/</g, '\\u003c')
     .replace(/>/g, '\\u003e')
     .replace(/&/g, '\\u0026')
@@ -1439,26 +1514,138 @@ function buildPackageHubHtml(boards){
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BvA Board Package</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
 <style>
   *{box-sizing:border-box}
-  html,body{margin:0;min-height:100%;font-family:Inter,Arial,sans-serif;background:#eef2fb;color:#0f172a}
-  body{padding:22px}
-  .hub{max-width:1500px;margin:auto;background:#fff;border:1px solid #e9eef7;border-radius:16px;box-shadow:0 6px 24px rgba(15,23,42,.08);overflow:hidden}
-  .hub-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 26px;border-bottom:1px solid #e9eef7}
-  .hub-title{font-size:22px;font-weight:800}
-  .hub-sub{margin-top:5px;color:#64748b;font-size:12px}
-  .hub-actions{display:flex;gap:9px}
-  .hub-btn{border:1px solid #cbd5e1;border-radius:9px;padding:10px 14px;background:#fff;color:#334155;font-weight:800;cursor:pointer}
-  .hub-btn.primary{background:#4f46e5;color:#fff;border-color:#4f46e5}
-  .tabs{display:flex;gap:6px;overflow-x:auto;padding:14px 20px;border-bottom:1px solid #e9eef7;background:#f8fafc}
-  .tab{border:1px solid #cbd5e1;border-radius:9px;padding:9px 14px;background:#fff;color:#475569;font-weight:800;cursor:pointer;white-space:nowrap}
-  .tab.active{background:#4f46e5;border-color:#4f46e5;color:#fff}
-  .frames{height:calc(100vh - 155px);min-height:680px}
-  .board-frame{display:none;width:100%;height:100%;min-height:680px;border:0}
-  .board-frame.active{display:block}
-  .status{padding:8px 22px;color:#64748b;font-size:11px;border-bottom:1px solid #e9eef7}
+
+  html,
+  body{
+    width:100%;
+    height:100%;
+    margin:0;
+    padding:0;
+    overflow:hidden;
+  }
+
+  body{
+    font-family:Inter,Arial,sans-serif;
+    background:#eef2fb;
+    color:#0f172a;
+  }
+
+  .hub{
+    width:100%;
+    height:100vh;
+    max-width:none;
+    margin:0;
+    background:#fff;
+    border:0;
+    border-radius:0;
+    box-shadow:none;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .hub-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:16px;
+    padding:18px 24px;
+    border-bottom:1px solid #e9eef7;
+    flex-shrink:0;
+  }
+
+  .hub-title{
+    font-size:22px;
+    font-weight:800;
+  }
+
+  .hub-sub{
+    margin-top:5px;
+    color:#64748b;
+    font-size:12px;
+  }
+
+  .hub-actions{
+    display:flex;
+    gap:9px;
+  }
+
+  .hub-btn{
+    border:1px solid #cbd5e1;
+    border-radius:9px;
+    padding:10px 14px;
+    background:#fff;
+    color:#334155;
+    font-weight:800;
+    cursor:pointer;
+  }
+
+  .hub-btn.primary{
+    background:#4f46e5;
+    color:#fff;
+    border-color:#4f46e5;
+  }
+
+  .tabs{
+    display:flex;
+    gap:6px;
+    overflow-x:auto;
+    padding:12px 20px;
+    border-bottom:1px solid #e9eef7;
+    background:#f8fafc;
+    flex-shrink:0;
+  }
+
+  .tab{
+    border:1px solid #cbd5e1;
+    border-radius:9px;
+    padding:9px 14px;
+    background:#fff;
+    color:#475569;
+    font-weight:800;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+
+  .tab.active{
+    background:#4f46e5;
+    border-color:#4f46e5;
+    color:#fff;
+  }
+
+  .status{
+    padding:7px 22px;
+    color:#64748b;
+    font-size:11px;
+    border-bottom:1px solid #e9eef7;
+    flex-shrink:0;
+  }
+
+  .frames{
+    flex:1;
+    min-height:0;
+    height:auto;
+    overflow:hidden;
+  }
+
+  .board-frame{
+    display:none;
+    width:100%;
+    height:100%;
+    min-height:0;
+    border:0;
+    background:#f7f9fd;
+  }
+
+  .board-frame.active{
+    display:block;
+  }
 </style>
 </head>
+
 <body>
 <div class="hub">
   <div class="hub-header">
@@ -1466,8 +1653,11 @@ function buildPackageHubHtml(boards){
       <div class="hub-title">BvA Board Package</div>
       <div class="hub-sub">Each tab contains an independent editable board.</div>
     </div>
+
     <div class="hub-actions">
-      <button class="hub-btn primary" id="download-zip">Download ZIP</button>
+      <button class="hub-btn primary" id="download-zip">
+        Download ZIP
+      </button>
     </div>
   </div>
 
@@ -1489,12 +1679,10 @@ window.__BVA_BOARDS__ = ${safeBoards};
     const tab = document.createElement('button');
     tab.className = 'tab';
     tab.textContent = board.title || ('Board ' + (index + 1));
-    tab.dataset.index = index;
     tabs.appendChild(tab);
 
     const frame = document.createElement('iframe');
     frame.className = 'board-frame';
-    frame.dataset.index = index;
     frame.srcdoc = board.html;
     frames.appendChild(frame);
 
@@ -1512,13 +1700,15 @@ window.__BVA_BOARDS__ = ${safeBoards};
 
     const board = boards[index];
     status.textContent = board
-      ? (board.title + ' · ' + board.subtitle)
+      ? board.title + ' · ' + board.subtitle
       : '';
   }
 
   function waitForFrame(frame){
-    if(frame.contentDocument &&
-       frame.contentDocument.readyState === 'complete'){
+    if(
+      frame.contentDocument &&
+      frame.contentDocument.readyState === 'complete'
+    ){
       return Promise.resolve();
     }
 
@@ -1544,18 +1734,28 @@ window.__BVA_BOARDS__ = ${safeBoards};
 
       if(source.tagName === 'TEXTAREA'){
         target.textContent = source.value;
-      }else if(source.type === 'checkbox' || source.type === 'radio'){
-        if(source.checked) target.setAttribute('checked', 'checked');
-        else target.removeAttribute('checked');
+      }else if(
+        source.type === 'checkbox' ||
+        source.type === 'radio'
+      ){
+        if(source.checked){
+          target.setAttribute('checked','checked');
+        }else{
+          target.removeAttribute('checked');
+        }
       }else if(source.tagName === 'SELECT'){
         Array.from(target.options).forEach((option, i) => {
-          const selected = source.options[i] &&
+          const selected =
+            source.options[i] &&
             source.options[i].selected;
 
           option.selected = selected;
 
-          if(selected) option.setAttribute('selected', 'selected');
-          else option.removeAttribute('selected');
+          if(selected){
+            option.setAttribute('selected','selected');
+          }else{
+            option.removeAttribute('selected');
+          }
         });
       }else{
         target.setAttribute('value', source.value);
@@ -1573,19 +1773,18 @@ window.__BVA_BOARDS__ = ${safeBoards};
       return;
     }
 
-    const currentBoards = [];
-    const frameList = Array.from(document.querySelectorAll('.board-frame'));
+    const frameList = Array.from(
+      document.querySelectorAll('.board-frame')
+    );
 
     await Promise.all(frameList.map(waitForFrame));
 
-    frameList.forEach((frame, index) => {
-      currentBoards.push({
-        title: boards[index].title,
-        subtitle: boards[index].subtitle,
-        fileName: boards[index].fileName,
-        html: snapshotFrame(frame)
-      });
-    });
+    const currentBoards = frameList.map((frame, index) => ({
+      title: boards[index].title,
+      subtitle: boards[index].subtitle,
+      fileName: boards[index].fileName,
+      html: snapshotFrame(frame)
+    }));
 
     const zip = new JSZip();
 
@@ -1614,17 +1813,19 @@ window.__BVA_BOARDS__ = ${safeBoards};
       .replace(/\\u2028/g, '\\\\u2028')
       .replace(/\\u2029/g, '\\\\u2029');
 
-    return document.documentElement.outerHTML
-      .replace(
-        /window\\.__BVA_BOARDS__\\s*=\\s*[^;]+;/,
-        'window.__BVA_BOARDS__ = ' + json + ';'
-      );
+    return document.documentElement.outerHTML.replace(
+      /window\\.__BVA_BOARDS__\\s*=\\s*[^;]+;/,
+      'window.__BVA_BOARDS__ = ' + json + ';'
+    );
   }
 
-  document.getElementById('download-zip')
+  document
+    .getElementById('download-zip')
     .addEventListener('click', downloadZip);
 
-  if(boards.length) activate(0);
+  if(boards.length){
+    activate(0);
+  }
 })();
 </script>
 </body>
