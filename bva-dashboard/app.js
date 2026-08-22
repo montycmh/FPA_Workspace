@@ -1386,12 +1386,23 @@ function renderLauncher(){
     }
   }
 function packageRecords(){
-  return state.generated.map((g, i) => ({
-    title: g.title,
-    subtitle: g.subtitle,
-    fileName: `${g.fileBase || `bva_board_${i+1}`}.html`,
-    html: g.html
-  }));
+  const seen = new Set();
+
+  return state.generated.reduce((out, g, i) => {
+    const fileName = `${g.fileBase || `bva_board_${i+1}`}.html`;
+
+    if(seen.has(fileName)) return out;
+    seen.add(fileName);
+
+    out.push({
+      title: g.title,
+      subtitle: g.subtitle,
+      fileName,
+      html: g.html
+    });
+
+    return out;
+  }, []);
 }
 
 function openGeneratedPackage(){
@@ -1436,7 +1447,7 @@ async function downloadGeneratedPackage(){
 }
 
 function buildPackageHubHtml(boards){
-  const boardFixCss = `
+const boardFixCss = `
 <style id="bva-package-board-fix">
   html,
   body{
@@ -1448,26 +1459,28 @@ function buildPackageHubHtml(boards){
   }
 
   body{
-    display:block!important;
+    display:flex!important;
+    min-height:100vh!important;
     background:#f7f9fd!important;
   }
 
   aside{
-    display:none!important;
+    display:flex!important;
+    width:244px!important;
+    position:fixed!important;
+    left:0!important;
+    top:0!important;
+    height:100vh!important;
+    z-index:200!important;
   }
 
   .main-workspace{
-    width:100%!important;
+    display:block!important;
+    width:calc(100% - 244px)!important;
     max-width:none!important;
-    margin-left:0!important;
+    margin-left:244px!important;
     padding:28px 30px 56px!important;
     overflow-x:hidden!important;
-  }
-
-  .topbar,
-  .sec{
-    width:100%!important;
-    max-width:none!important;
   }
 
   .trend-wrap,
@@ -1479,19 +1492,16 @@ function buildPackageHubHtml(boards){
   }
 
   .trend-wrap img,
-  .wf-wrap img,
-  .trend-wrap canvas,
-  .wf-wrap canvas{
+  .wf-wrap img{
     display:block!important;
     width:100%!important;
     max-width:100%!important;
     height:100%!important;
     max-height:100%!important;
     object-fit:contain!important;
-    object-position:center!important;
   }
 </style>`;
-
+  
   const packageBoards = boards.map(board => ({
     ...board,
     html: String(board.html).replace(
