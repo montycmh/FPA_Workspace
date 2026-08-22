@@ -1520,14 +1520,9 @@ function buildPackageHubHtml(boards){
     )
   }));
 
-  const encodePackageData = value => JSON.stringify(value)
-    .replace(/</g, '\\u003c')
-    .replace(/>/g, '\\u003e')
-    .replace(/&/g, '\\u0026')
-    .replace(/\u2028/g, '\\u2028')
-    .replace(/\u2029/g, '\\u2029');
-
-  const safeBoards = encodePackageData(packageBoards);
+  const encodedBoards = btoa(
+    unescape(encodeURIComponent(JSON.stringify(packageBoards)))
+  );
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1536,65 +1531,18 @@ function buildPackageHubHtml(boards){
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BvA Board Package</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-
 <style>
   *{box-sizing:border-box}
-
-  html,
-  body{
-    width:100%;
-    height:100%;
-    margin:0;
-    padding:0;
-    overflow:hidden;
-  }
-
-  body{
-    font-family:Inter,Arial,sans-serif;
-    background:#eef2fb;
-    color:#0f172a;
-  }
-
-  .hub{
-    width:100%;
-    height:100vh;
-    max-width:none;
-    margin:0;
-    background:#fff;
-    border:0;
-    border-radius:0;
-    box-shadow:none;
-    overflow:hidden;
-    display:flex;
-    flex-direction:column;
-  }
-
-  .hub-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:16px;
-    padding:18px 24px;
-    border-bottom:1px solid #e9eef7;
-    flex-shrink:0;
-  }
-
+  html,body{width:100%;height:100%;margin:0;padding:0;overflow:hidden}
+  body{font-family:Inter,Arial,sans-serif;background:#eef2fb;color:#0f172a}
+  .hub{width:100%;height:100vh;max-width:none;margin:0;background:#fff;border:0;border-radius:0;box-shadow:none;overflow:hidden;display:flex;flex-direction:column}
+  .hub-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 24px;border-bottom:1px solid #e9eef7;flex-shrink:0}
   .hub-title{font-size:22px;font-weight:800}
   .hub-sub{margin-top:5px;color:#64748b;font-size:12px}
   .hub-actions{display:flex;gap:9px}
   .hub-btn{border:1px solid #cbd5e1;border-radius:9px;padding:10px 14px;background:#fff;color:#334155;font-weight:800;cursor:pointer}
   .hub-btn.primary{background:#4f46e5;color:#fff;border-color:#4f46e5}
-
-  .tabs{
-    display:flex;
-    gap:6px;
-    overflow-x:auto;
-    padding:12px 20px;
-    border-bottom:1px solid #e9eef7;
-    background:#f8fafc;
-    flex-shrink:0;
-  }
-
+  .tabs{display:flex;gap:6px;overflow-x:auto;padding:12px 20px;border-bottom:1px solid #e9eef7;background:#f8fafc;flex-shrink:0}
   .tab{border:1px solid #cbd5e1;border-radius:9px;padding:9px 14px;background:#fff;color:#475569;font-weight:800;cursor:pointer;white-space:nowrap}
   .tab.active{background:#4f46e5;border-color:#4f46e5;color:#fff}
   .status{padding:7px 22px;color:#64748b;font-size:11px;border-bottom:1px solid #e9eef7;flex-shrink:0}
@@ -1603,7 +1551,6 @@ function buildPackageHubHtml(boards){
   .board-frame.active{display:block}
 </style>
 </head>
-
 <body>
 <div class="hub">
   <div class="hub-header">
@@ -1615,26 +1562,36 @@ function buildPackageHubHtml(boards){
       <button class="hub-btn primary" id="download-zip">Download ZIP</button>
     </div>
   </div>
-
   <div class="tabs" id="tabs"></div>
   <div class="status" id="status"></div>
   <div class="frames" id="frames"></div>
 </div>
-
 <script>
-window.__BVA_BOARDS__ = ${safeBoards};
+window.__BVA_BOARDS_B64__ = "${encodedBoards}";
 
 (function(){
-  const boards = window.__BVA_BOARDS__ || [];
+  function decodeBoards(encoded){
+    try{
+      const binary = atob(encoded);
+      const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0));
+      return JSON.parse(new TextDecoder().decode(bytes));
+    }catch(e){
+      try{
+        return JSON.parse(decodeURIComponent(escape(atob(encoded))));
+      }catch(err){
+        console.error('Could not decode BvA package data', err);
+        return [];
+      }
+    }
+  }
+
+  const boards = decodeBoards(window.__BVA_BOARDS_B64__ || '');
   const tabs = document.getElementById('tabs');
   const frames = document.getElementById('frames');
   const status = document.getElementById('status');
 
-  // Important when this index.html has been serialized after it was already open.
-  // Otherwise the saved tabs/iframes remain and boards.forEach adds another set.
   tabs.innerHTML = '';
   frames.innerHTML = '';
-  status.textContent = '';
 
   boards.forEach((board, index) => {
     const tab = document.createElement('button');
@@ -1712,13 +1669,8 @@ window.__BVA_BOARDS__ = ${safeBoards};
     return '<!DOCTYPE html>\\n' + clone.outerHTML;
   }
 
-  function encodePackageData(value){
-    return JSON.stringify(value)
-      .replace(/</g, '\\u003c')
-      .replace(/>/g, '\\u003e')
-      .replace(/&/g, '\\u0026')
-      .replace(/\\u2028/g, '\\u2028')
-      .replace(/\\u2029/g, '\\u2029');
+  function encodeBoards(value){
+    return btoa(unescape(encodeURIComponent(JSON.stringify(value))));
   }
 
   async function downloadZip(){
@@ -1751,7 +1703,7 @@ window.__BVA_BOARDS__ = ${safeBoards};
   }
 
   function buildUpdatedIndex(updatedBoards){
-    const json = encodePackageData(updatedBoards);
+    const encoded = encodeBoards(updatedBoards);
     const clone = document.documentElement.cloneNode(true);
     const clonedTabs = clone.querySelector('#tabs');
     const clonedFrames = clone.querySelector('#frames');
@@ -1761,15 +1713,16 @@ window.__BVA_BOARDS__ = ${safeBoards};
     if(clonedFrames) clonedFrames.innerHTML = '';
     if(clonedStatus) clonedStatus.textContent = '';
 
-    const assignment = 'window.__BVA_BOARDS__ = ';
-    const endMarker = ';\\n\\n(function(){';
-    clone.querySelectorAll('script').forEach(script => {
-      const text = script.textContent || '';
-      const start = text.indexOf(assignment);
-      const end = text.indexOf(endMarker, start);
-      if(start < 0 || end < 0) return;
-      script.textContent = text.slice(0, start) + assignment + json + text.slice(end + 1);
-    });
+    const dataScript = Array.from(clone.querySelectorAll('script')).find(script =>
+      (script.textContent || '').includes('window.__BVA_BOARDS_B64__')
+    );
+
+    if(dataScript){
+      dataScript.textContent = dataScript.textContent.replace(
+        /window\\.__BVA_BOARDS_B64__\\s*=\\s*["'][^"']*["']\\s*;/,
+        'window.__BVA_BOARDS_B64__ = "' + encoded + '";'
+      );
+    }
 
     return '<!DOCTYPE html>\\n' + clone.outerHTML;
   }
