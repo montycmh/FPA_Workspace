@@ -1058,34 +1058,34 @@
     else { const head = clone.querySelector('head'); if(head) head.appendChild(styleTag); }
   }
 
-  function freezeCanvasesAsImages(clone){
-    document.querySelectorAll('canvas[id]').forEach(liveCanvas => {
-      let dataUrl;
+function freezeCanvasesAsImages(clone){
+  document.querySelectorAll('canvas[id]').forEach(liveCanvas => {
+    let dataUrl;
 
-      try{
-        dataUrl = liveCanvas.toDataURL('image/png');
-      }catch(e){
-        console.warn('Could not snapshot canvas ' + liveCanvas.id, e);
-        return;
-      }
+    try{
+      dataUrl = liveCanvas.toDataURL('image/png');
+    }catch(e){
+      console.warn('Could not snapshot canvas ' + liveCanvas.id, e);
+      return;
+    }
 
-      const cloneCanvas = clone.querySelector('#' + liveCanvas.id);
-      if(!cloneCanvas) return;
+    const cloneCanvas = clone.querySelector('#' + liveCanvas.id);
+    if(!cloneCanvas) return;
 
-      const img = document.createElement('img');
-      img.src = dataUrl;
-      img.alt = liveCanvas.id;
-      img.style.display = 'block';
-      img.style.width = '100%';
-      img.style.height = '100%';
-      img.style.maxWidth = '100%';
-      img.style.maxHeight = '100%';
-      img.style.objectFit = 'contain';
-      img.style.objectPosition = 'center';
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    img.alt = liveCanvas.id;
+    img.style.display = 'block';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '100%';
+    img.style.objectFit = 'contain';
+    img.style.objectPosition = 'center';
 
-      cloneCanvas.replaceWith(img);
-    });
-  }
+    cloneCanvas.replaceWith(img);
+  });
+}
 
   function stripLiveScripts(clone, keepPatterns){
     const keep = keepPatterns || [];
@@ -1390,10 +1390,9 @@ function packageRecords(){
 
   return state.generated.reduce((out, g, i) => {
     const fileName = `${g.fileBase || `bva_board_${i+1}`}.html`;
-    const key = fileName.toLowerCase();
 
-    if(seen.has(key)) return out;
-    seen.add(key);
+    if(seen.has(fileName)) return out;
+    seen.add(fileName);
 
     out.push({
       title: g.title,
@@ -1448,6 +1447,16 @@ async function downloadGeneratedPackage(){
 }
 
 function buildPackageHubHtml(boards){
+  function encodePackageBase64(value){
+    const bytes = new TextEncoder().encode(String(value || ''));
+    let binary = '';
+    const chunkSize = 0x8000;
+    for(let i = 0; i < bytes.length; i += chunkSize){
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+  }
+
   const boardFixCss = `
 <style id="bva-package-board-fix">
   html,
@@ -1484,12 +1493,6 @@ function buildPackageHubHtml(boards){
     overflow-x:hidden!important;
   }
 
-  .topbar,
-  .sec{
-    width:100%!important;
-    max-width:none!important;
-  }
-
   .trend-wrap,
   .wf-wrap{
     position:relative!important;
@@ -1499,9 +1502,7 @@ function buildPackageHubHtml(boards){
   }
 
   .trend-wrap img,
-  .wf-wrap img,
-  .trend-wrap canvas,
-  .wf-wrap canvas{
+  .wf-wrap img{
     display:block!important;
     width:100%!important;
     max-width:100%!important;
@@ -1512,17 +1513,21 @@ function buildPackageHubHtml(boards){
   }
 </style>`;
 
-  const packageBoards = boards.map(board => ({
-    ...board,
-    html: String(board.html).replace(
-      /<\/head>/i,
-      `${boardFixCss}</head>`
+  const packageData = boards.map(board => ({
+    title: board.title,
+    subtitle: board.subtitle,
+    fileName: board.fileName,
+    htmlBase64: encodePackageBase64(
+      String(board.html).replace(/<\/head>/i, `${boardFixCss}</head>`)
     )
   }));
 
-  const encodedBoards = btoa(
-    unescape(encodeURIComponent(JSON.stringify(packageBoards)))
-  );
+  const safePayload = JSON.stringify(packageData)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1533,22 +1538,132 @@ function buildPackageHubHtml(boards){
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   *{box-sizing:border-box}
-  html,body{width:100%;height:100%;margin:0;padding:0;overflow:hidden}
-  body{font-family:Inter,Arial,sans-serif;background:#eef2fb;color:#0f172a}
-  .hub{width:100%;height:100vh;max-width:none;margin:0;background:#fff;border:0;border-radius:0;box-shadow:none;overflow:hidden;display:flex;flex-direction:column}
-  .hub-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 24px;border-bottom:1px solid #e9eef7;flex-shrink:0}
-  .hub-title{font-size:22px;font-weight:800}
-  .hub-sub{margin-top:5px;color:#64748b;font-size:12px}
-  .hub-actions{display:flex;gap:9px}
-  .hub-btn{border:1px solid #cbd5e1;border-radius:9px;padding:10px 14px;background:#fff;color:#334155;font-weight:800;cursor:pointer}
-  .hub-btn.primary{background:#4f46e5;color:#fff;border-color:#4f46e5}
-  .tabs{display:flex;gap:6px;overflow-x:auto;padding:12px 20px;border-bottom:1px solid #e9eef7;background:#f8fafc;flex-shrink:0}
-  .tab{border:1px solid #cbd5e1;border-radius:9px;padding:9px 14px;background:#fff;color:#475569;font-weight:800;cursor:pointer;white-space:nowrap}
-  .tab.active{background:#4f46e5;border-color:#4f46e5;color:#fff}
-  .status{padding:7px 22px;color:#64748b;font-size:11px;border-bottom:1px solid #e9eef7;flex-shrink:0}
-  .frames{flex:1;min-height:0;height:auto;overflow:hidden}
-  .board-frame{display:none;width:100%;height:100%;min-height:0;border:0;background:#f7f9fd}
-  .board-frame.active{display:block}
+
+  html,
+  body{
+    width:100%;
+    height:100%;
+    margin:0;
+    padding:0;
+    overflow:hidden;
+  }
+
+  body{
+    font-family:Inter,Arial,sans-serif;
+    background:#eef2fb;
+    color:#0f172a;
+  }
+
+  .hub{
+    width:100%;
+    height:100vh;
+    max-width:none;
+    margin:0;
+    background:#fff;
+    border:0;
+    border-radius:0;
+    box-shadow:none;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .hub-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:16px;
+    padding:18px 24px;
+    border-bottom:1px solid #e9eef7;
+    flex-shrink:0;
+  }
+
+  .hub-title{
+    font-size:22px;
+    font-weight:800;
+  }
+
+  .hub-sub{
+    margin-top:5px;
+    color:#64748b;
+    font-size:12px;
+  }
+
+  .hub-actions{
+    display:flex;
+    gap:9px;
+  }
+
+  .hub-btn{
+    border:1px solid #cbd5e1;
+    border-radius:9px;
+    padding:10px 14px;
+    background:#fff;
+    color:#334155;
+    font-weight:800;
+    cursor:pointer;
+  }
+
+  .hub-btn.primary{
+    background:#4f46e5;
+    color:#fff;
+    border-color:#4f46e5;
+  }
+
+  .tabs{
+    display:flex;
+    gap:6px;
+    overflow-x:auto;
+    padding:12px 20px;
+    border-bottom:1px solid #e9eef7;
+    background:#f8fafc;
+    flex-shrink:0;
+  }
+
+  .tab{
+    border:1px solid #cbd5e1;
+    border-radius:9px;
+    padding:9px 14px;
+    background:#fff;
+    color:#475569;
+    font-weight:800;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+
+  .tab.active{
+    background:#4f46e5;
+    border-color:#4f46e5;
+    color:#fff;
+  }
+
+  .status{
+    padding:7px 22px;
+    color:#64748b;
+    font-size:11px;
+    border-bottom:1px solid #e9eef7;
+    flex-shrink:0;
+  }
+
+  .frames{
+    flex:1;
+    min-height:0;
+    height:auto;
+    overflow:hidden;
+  }
+
+  .board-frame{
+    display:none;
+    width:100%;
+    height:100%;
+    min-height:0;
+    border:0;
+    background:#f7f9fd;
+  }
+
+  .board-frame.active{
+    display:block;
+  }
 </style>
 </head>
 <body>
@@ -1562,43 +1677,42 @@ function buildPackageHubHtml(boards){
       <button class="hub-btn primary" id="download-zip">Download ZIP</button>
     </div>
   </div>
+
   <div class="tabs" id="tabs"></div>
   <div class="status" id="status"></div>
   <div class="frames" id="frames"></div>
 </div>
-<script>
-window.__BVA_BOARDS_B64__ = "${encodedBoards}";
+
+<script id="bva-package-script">
+window.__BVA_BOARDS__ = ${safePayload};
 
 (function(){
-  function decodeBoards(encoded){
-    try{
-      const binary = atob(encoded);
-      const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0));
-      return JSON.parse(new TextDecoder().decode(bytes));
-    }catch(e){
-      try{
-        return JSON.parse(decodeURIComponent(escape(atob(encoded))));
-      }catch(err){
-        console.error('Could not decode BvA package data', err);
-        return [];
-      }
+  function decodePackageBase64(value){
+    const binary = atob(value || '');
+    const bytes = new Uint8Array(binary.length);
+    for(let i = 0; i < binary.length; i++){
+      bytes[i] = binary.charCodeAt(i);
     }
+    return new TextDecoder().decode(bytes);
   }
 
-  const boards = decodeBoards(window.__BVA_BOARDS_B64__ || '');
+  const boards = (window.__BVA_BOARDS__ || []).map(board => ({
+    ...board,
+    html: decodePackageBase64(board.htmlBase64)
+  }));
+
   const tabs = document.getElementById('tabs');
   const frames = document.getElementById('frames');
   const status = document.getElementById('status');
 
   tabs.innerHTML = '';
   frames.innerHTML = '';
+  status.textContent = '';
 
   boards.forEach((board, index) => {
     const tab = document.createElement('button');
     tab.className = 'tab';
-    tab.textContent = board.title
-      ? board.title + ' · ' + board.subtitle
-      : 'Board ' + (index + 1);
+    tab.textContent = board.title || ('Board ' + (index + 1));
     tab.dataset.index = index;
     tabs.appendChild(tab);
 
@@ -1627,7 +1741,10 @@ window.__BVA_BOARDS_B64__ = "${encodedBoards}";
   }
 
   function waitForFrame(frame){
-    if(frame.contentDocument && frame.contentDocument.readyState === 'complete'){
+    if(
+      frame.contentDocument &&
+      frame.contentDocument.readyState === 'complete'
+    ){
       return Promise.resolve();
     }
 
@@ -1638,7 +1755,10 @@ window.__BVA_BOARDS_B64__ = "${encodedBoards}";
 
   function snapshotFrame(frame){
     const sourceDoc = frame.contentDocument;
-    if(!sourceDoc) throw new Error('Could not read board frame');
+
+    if(!sourceDoc){
+      throw new Error('Could not read board frame');
+    }
 
     const clone = sourceDoc.documentElement.cloneNode(true);
     const sourceFields = sourceDoc.querySelectorAll('textarea,input,select');
@@ -1650,15 +1770,28 @@ window.__BVA_BOARDS_B64__ = "${encodedBoards}";
 
       if(source.tagName === 'TEXTAREA'){
         target.textContent = source.value;
-      }else if(source.type === 'checkbox' || source.type === 'radio'){
-        if(source.checked) target.setAttribute('checked','checked');
-        else target.removeAttribute('checked');
+      }else if(
+        source.type === 'checkbox' ||
+        source.type === 'radio'
+      ){
+        if(source.checked){
+          target.setAttribute('checked','checked');
+        }else{
+          target.removeAttribute('checked');
+        }
       }else if(source.tagName === 'SELECT'){
         Array.from(target.options).forEach((option, i) => {
-          const selected = source.options[i] && source.options[i].selected;
+          const selected =
+            source.options[i] &&
+            source.options[i].selected;
+
           option.selected = selected;
-          if(selected) option.setAttribute('selected','selected');
-          else option.removeAttribute('selected');
+
+          if(selected){
+            option.setAttribute('selected','selected');
+          }else{
+            option.removeAttribute('selected');
+          }
         });
       }else{
         target.setAttribute('value', source.value);
@@ -1666,11 +1799,8 @@ window.__BVA_BOARDS_B64__ = "${encodedBoards}";
     });
 
     clone.querySelectorAll('#toast').forEach(el => el.remove());
-    return '<!DOCTYPE html>\\n' + clone.outerHTML;
-  }
 
-  function encodeBoards(value){
-    return btoa(unescape(encodeURIComponent(JSON.stringify(value))));
+    return '<!DOCTYPE html>\\n' + clone.outerHTML;
   }
 
   async function downloadZip(){
@@ -1679,7 +1809,10 @@ window.__BVA_BOARDS_B64__ = "${encodedBoards}";
       return;
     }
 
-    const frameList = Array.from(frames.querySelectorAll('.board-frame'));
+    const frameList = Array.from(
+      frames.querySelectorAll('.board-frame')
+    );
+
     await Promise.all(frameList.map(waitForFrame));
 
     const currentBoards = frameList.map((frame, index) => ({
@@ -1690,51 +1823,96 @@ window.__BVA_BOARDS_B64__ = "${encodedBoards}";
     }));
 
     const zip = new JSZip();
-    currentBoards.forEach(board => zip.file(board.fileName, board.html));
+
+    currentBoards.forEach(board => {
+      zip.file(board.fileName, board.html);
+    });
+
     zip.file('index.html', buildUpdatedIndex(currentBoards));
 
     const blob = await zip.generateAsync({ type:'blob' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
+
     link.href = url;
     link.download = 'bva_boards_updated.zip';
     link.click();
+
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   function buildUpdatedIndex(updatedBoards){
-    const encoded = encodeBoards(updatedBoards);
+    function encodePackageBase64(value){
+      const bytes = new TextEncoder().encode(String(value || ''));
+      let binary = '';
+      const chunkSize = 0x8000;
+      for(let i = 0; i < bytes.length; i += chunkSize){
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      return btoa(binary);
+    }
+
+    const payload = updatedBoards.map(board => ({
+      title: board.title,
+      subtitle: board.subtitle,
+      fileName: board.fileName,
+      htmlBase64: encodePackageBase64(board.html)
+    }));
+
+    const json = JSON.stringify(payload)
+      .replace(/</g, '\\u003c')
+      .replace(/>/g, '\\u003e')
+      .replace(/&/g, '\\u0026')
+      .replace(/\\u2028/g, '\\u2028')
+      .replace(/\\u2029/g, '\\u2029');
+
     const clone = document.documentElement.cloneNode(true);
     const clonedTabs = clone.querySelector('#tabs');
     const clonedFrames = clone.querySelector('#frames');
     const clonedStatus = clone.querySelector('#status');
+    const packageScript = clone.querySelector('#bva-package-script');
 
     if(clonedTabs) clonedTabs.innerHTML = '';
     if(clonedFrames) clonedFrames.innerHTML = '';
     if(clonedStatus) clonedStatus.textContent = '';
 
-    const dataScript = Array.from(clone.querySelectorAll('script')).find(script =>
-      (script.textContent || '').includes('window.__BVA_BOARDS_B64__')
-    );
-
-    if(dataScript){
-      dataScript.textContent = dataScript.textContent.replace(
-        /window\\.__BVA_BOARDS_B64__\\s*=\\s*["'][^"']*["']\\s*;/,
-        'window.__BVA_BOARDS_B64__ = "' + encoded + '";'
-      );
+    if(!packageScript){
+      throw new Error('Package script not found.');
     }
+
+    const scriptText = packageScript.textContent || '';
+    const marker = 'window.__BVA_BOARDS__ = ';
+    const markerIndex = scriptText.indexOf(marker);
+    if(markerIndex < 0){
+      throw new Error('Package data marker not found.');
+    }
+
+    const valueStart = markerIndex + marker.length;
+    const valueEnd = scriptText.indexOf(';', valueStart);
+    if(valueEnd < 0){
+      throw new Error('Package data terminator not found.');
+    }
+
+    packageScript.textContent =
+      scriptText.slice(0, valueStart) +
+      json +
+      scriptText.slice(valueEnd);
 
     return '<!DOCTYPE html>\\n' + clone.outerHTML;
   }
 
-  document.getElementById('download-zip').addEventListener('click', downloadZip);
-  if(boards.length) activate(0);
+  document
+    .getElementById('download-zip')
+    .addEventListener('click', downloadZip);
+
+  if(boards.length){
+    activate(0);
+  }
 })();
 </script>
 </body>
 </html>`;
 }
-
   async function downloadPdf(){
     if(!state.model){ toast('Build a dashboard first'); return; }
     if(typeof html2canvas === 'undefined' || !window.jspdf){
